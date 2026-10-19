@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Sistema de diseño — tokens del Manual de Marca
+   Tailwind v4: cada variable de @theme genera sus clases.
+   --color-ssanty          → bg-ssanty, text-ssanty, border-ssanty…
+   --color-ssanty-profundo → bg-ssanty-profundo…
+   --font-display          → font-display
+   --ease-salida           → ease-salida
+   ========================================================================== */
+
+@theme {
+  /* Neutros */
+  --color-tinta: #161923;    /* fondo principal */
+  --color-grafito: #20242f;  /* tarjetas, navbar, paneles */
+  --color-pizarra: #3a3f52;  /* bordes, divisores, inputs */
+  --color-niebla: #9ba1b3;   /* texto secundario */
+  --color-papel: #eeebe4;    /* texto principal */
+  --color-arena: #e6c77e;    /* advertencia */
+
+  /* Un color por integrante: claro (acentos) y profundo (fondos grandes) */
+  --color-fexx: #7c9ce4;
+  --color-fexx-profundo: #2c3e66;
+  --color-ssanty: #6fcdbe;
+  --color-ssanty-profundo: #1f5650;
+  --color-ultronzi: #b6d76e;
+  --color-ultronzi-profundo: #3f5326;
+  --color-rojo: #ee8e80;
+  --color-rojo-profundo: #6a3530;
+
+  /* Semánticos (reutilizan la paleta) */
+  --color-exito: #b6d76e;
+  --color-error: #ee8e80;
+  --color-info: #7c9ce4;
+  --color-advertencia: #e6c77e;
+
+  /* Tipografía */
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Curvas de movimiento */
+  --ease-salida: cubic-bezier(0.22, 1, 0.36, 1); /* GSAP: expo.out */
+  --ease-suave: cubic-bezier(0.65, 0, 0.35, 1);  /* GSAP: sine.inOut */
+
+  /* Animaciones reutilizables (clases animate-*) */
+  --animate-codigo: codigo-corre 18s linear infinite;
+  --animate-girar: spin 0.8s linear infinite;
+  --animate-entrar: entrar 0.4s var(--ease-salida) both;
+  --animate-brillo: brillo 1.4s linear infinite;
+
+  @keyframes codigo-corre {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+  }
+  @keyframes entrar {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes brillo {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+}
+
+/* Duraciones del manual, para usar en CSS o en GSAP (ver src/data/movimiento.js) */
+:root {
+  --dur-rapida: 150ms;
+  --dur-media: 300ms;
+  --dur-lenta: 600ms;
+  --dur-escena: 1200ms;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-tinta text-papel font-sans;
+    min-height: 100dvh;
+    overflow-x: clip; /* las ventanas inclinadas no generan scroll lateral */
+  }
+  h1, h2, h3, h4 {
+    @apply font-display font-bold;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-fexx) 40%, transparent);
+  }
+  /* Foco visible en todo el sitio: 2 px en Azul Bruma */
+  :focus-visible {
+    outline: 2px solid var(--color-fexx);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Etiqueta en mayúsculas mono (ej: "01 — Lead Frontend") */
+  .etiqueta {
+    @apply font-mono text-[13px] uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* Accesibilidad del movimiento: si el usuario lo pide, sin animaciones */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
