@@ -1,4 +1,3 @@
-// Loader circular. Hereda el color del texto (currentColor).
 export function Spinner({ tamaño = 18, className = '' }) {
   return (
     <span
@@ -9,7 +8,7 @@ export function Spinner({ tamaño = 18, className = '' }) {
   )
 }
 
-// Bloque de carga con brillo que recorre (para tarjetas y tablas mientras llegan los datos).
+// Fexx: esto es para cuando cargan las tablas y gráficos del admin - Rojo
 export function Esqueleto({ className = '' }) {
   return (
     <span

@@ -3,11 +3,6 @@ import { integrantes } from '../data/integrantes'
 import { HeroIntegrantes } from '../components/animaciones/HeroIntegrantes'
 import { VentanaIntegrante } from '../components/animaciones/VentanaIntegrante'
 import { Boton, Campo, Chip, Esqueleto, IconoCandado, Modal, Spinner, useToast } from '../components/ui'
-
-// Página de muestra del sistema de diseño (ruta sugerida: /guia).
-// Sirve para ver y probar todos los componentes juntos mientras se arma el sitio.
-// Ssanty: las secciones Hero y Equipo se pueden llevar tal cual a la Home.
-
 const neutros = [
   ['Tinta', '#161923', 'bg-tinta border border-pizarra'],
   ['Grafito', '#20242F', 'bg-grafito'],

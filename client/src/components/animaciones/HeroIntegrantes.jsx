@@ -8,17 +8,6 @@ import { Silueta } from './Silueta'
 import { Boton } from '../ui/Boton'
 
 gsap.registerPlugin(useGSAP)
-
-// Hero con el slider de integrantes.
-//
-// - Rota sola cada `intervalo` segundos; las barras de abajo muestran el avance.
-// - Al cambiar: la foto actual sale, el fondo funde al tono profundo del
-//   siguiente, entra su nombre gigante y después su foto.
-// - Se pausa con el mouse sobre los indicadores o con el foco adentro.
-//   (No con el mouse sobre todo el hero: ocupa la pantalla y nunca arrancaría.)
-// - Se puede deslizar con el dedo y cambiar con las flechas del teclado.
-// - Con "reducir movimiento" activado: sin autoplay y cambios instantáneos.
-
 export function HeroIntegrantes({ intervalo = 5 }) {
   const raiz = useRef(null)
   const fotos = useRef([])
@@ -36,7 +25,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
   const actual = integrantes[indice]
   const ir = (i) => setIndice(((i % total) + total) % total)
 
-  // Estado inicial: solo el primero visible.
   useGSAP(
     () => {
       fotos.current.forEach((el, i) => gsap.set(el, { autoAlpha: i === 0 ? 1 : 0 }))
@@ -50,14 +38,12 @@ export function HeroIntegrantes({ intervalo = 5 }) {
     { scope: raiz },
   )
 
-  // Transición entre integrantes.
   useGSAP(
     () => {
       const de = anterior.current
       const a = indice
       if (de === a) return
       anterior.current = a
-      // Hacia adelante (1) o hacia atrás (-1), por el camino más corto en el círculo
       const signo = (a - de + total) % total <= total / 2 ? 1 : -1
       const d = reducido ? 0 : 1
 
@@ -71,7 +57,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
     { dependencies: [indice], scope: raiz },
   )
 
-  // Barra de progreso + autoplay (el tween de la barra es el temporizador).
   useGSAP(
     () => {
       barras.current.forEach((el) => gsap.set(el, { scaleX: 0, transformOrigin: 'left' }))
@@ -116,16 +101,12 @@ export function HeroIntegrantes({ intervalo = 5 }) {
       onPointerUp={alSoltar}
       className="relative h-[min(100svh,860px)] min-h-[640px] touch-pan-y overflow-hidden select-none"
     >
-      {/* Luz suave del color claro detrás de la foto */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 transition-[background] duration-[1200ms] ease-suave"
         style={{ background: `radial-gradient(circle at 62% 60%, ${actual.claro}2E, transparent 52%)` }}
       />
 
-      {/* Nombres gigantes (detrás de la foto) */}
-      {/* Ojo: los elementos que anima GSAP no usan clases translate-* de
-          Tailwind (GSAP las pisa). Se centran con un contenedor flex. */}
       {integrantes.map((m, i) => (
         <div
           key={m.id}
@@ -142,7 +123,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
         </div>
       ))}
 
-      {/* Fotos */}
       {integrantes.map((m, i) => (
         <div
           key={m.id}
@@ -154,7 +134,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
         </div>
       ))}
 
-      {/* Texto principal */}
       <div className="absolute left-4 right-4 top-24 z-10 flex flex-col gap-4 sm:left-[clamp(16px,4vw,48px)] sm:right-auto sm:top-auto sm:bottom-16 sm:max-w-[420px] sm:gap-5">
         <span className="etiqueta text-papel/75">Equipo de desarrollo fullstack</span>
         <h1 className="m-0 text-[clamp(36px,4.4vw,64px)] leading-[1.05] text-papel">Hacemos la web desde adentro.</h1>
@@ -171,7 +150,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
         </div>
       </div>
 
-      {/* Indicadores (también son botones para elegir integrante) */}
       <div
         onMouseEnter={() => pausar(true)}
         onMouseLeave={() => pausar(false)}
@@ -195,7 +173,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
         ))}
       </div>
 
-      {/* Rol del integrante actual */}
       <div className="absolute bottom-16 right-[clamp(16px,4vw,48px)] z-10 hidden flex-col items-end gap-1.5 sm:flex">
         <span className="font-mono text-[13px] text-papel/70">
           0{indice + 1} / 0{total}
@@ -203,7 +180,6 @@ export function HeroIntegrantes({ intervalo = 5 }) {
         <span className="font-display text-xl font-medium text-papel">{actual.rol}</span>
       </div>
 
-      {/* Para lectores de pantalla: anuncia el cambio solo si el usuario interactúa */}
       <p className="sr-only" aria-live={pausado ? 'polite' : 'off'}>
         {actual.nombre}, {actual.rol}. Integrante {indice + 1} de {total}.
       </p>

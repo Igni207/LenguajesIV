@@ -1,6 +1,3 @@
-// Etiqueta chica en mono para tecnologías del stack o estados.
-// <Chip>React</Chip>   <Chip tono="exito">Respondida</Chip>
-
 const tonos = {
   neutro: 'border-pizarra text-papel',
   exito: 'border-exito/50 text-exito',

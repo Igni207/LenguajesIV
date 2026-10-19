@@ -1,8 +1,5 @@
-// Datos de los integrantes. Lo que está entre [corchetes] lo completa cada uno.
-// Más adelante esto vendrá de la API (GET /api/integrantes); por ahora es local.
-//
-// foto: ruta a un PNG/WebP recortado SIN fondo (ej: '/fotos/ssanty.webp',
-// guardado en client/public/fotos/). Mientras sea null se muestra una silueta.
+// Gonzi: después esto tendría que venir de la API, por ahora está a mano.
+// Chicos: completen sus bios y chips - Rojo
 
 export const integrantes = [
   {
@@ -11,7 +8,7 @@ export const integrantes = [
     nombre: 'Fexx55',
     nombreHero: 'FEXX',
     rol: 'Fullstack & Analytics',
-    clase: 'fexx', // nombre del color en Tailwind (bg-fexx, bg-fexx-profundo…)
+    clase: 'fexx',
     claro: '#7C9CE4',
     profundo: '#2C3E66',
     bio: '[Bio breve de Fexx: 2 o 3 líneas sobre qué hace y qué le gusta construir.]',
@@ -94,8 +91,6 @@ export const integrantes = [
   },
 ]
 
-// Clases completas por color. Tailwind solo genera clases que aparecen
-// escritas enteras en el código, así que no se pueden armar con `bg-${x}`.
 export const coloresIntegrante = {
   fexx: { bg: 'bg-fexx', text: 'text-fexx', border: 'border-fexx', bgProfundo: 'bg-fexx-profundo' },
   ssanty: { bg: 'bg-ssanty', text: 'text-ssanty', border: 'border-ssanty', bgProfundo: 'bg-ssanty-profundo' },

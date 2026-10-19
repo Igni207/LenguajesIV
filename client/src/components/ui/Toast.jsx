@@ -1,17 +1,7 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { DURACION, EASE } from '../../data/movimiento'
-
-// Notificaciones tipo toast.
-//
-// 1) Envolver la app una vez:   <ToastProvider><App /></ToastProvider>
-// 2) Usar en cualquier componente:
-//      const { mostrar } = useToast()
-//      mostrar({ tipo: 'exito', titulo: 'Sesión iniciada', mensaje: 'Ya ves todos los proyectos.' })
-//
-// tipo: 'exito' | 'error' | 'info' | 'advertencia'. Se cierran solas (4 s por
-// defecto); el tiempo se pausa al pasar el mouse.
-
+// El provider ya está puesto en main.jsx - Rojo
 const ContextoToast = createContext(null)
 
 const estilos = {
@@ -97,7 +87,6 @@ function ItemToast({ tipo, titulo, mensaje, duracion, onFin }) {
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const ctx = useContext(ContextoToast)
   if (!ctx) throw new Error('useToast tiene que usarse dentro de <ToastProvider>')

@@ -1,24 +1,11 @@
 import { useId, useState } from 'react'
-
-// Campo de formulario: etiqueta + input + ayuda/error.
-// La lógica de validación la decide quien lo usa (Ssanty); este componente
-// solo muestra el estado. Si `error` tiene texto, el borde se pone Coral
-// Arcilla, se anuncia a lectores de pantalla y aparece el mensaje debajo.
-//
-// <Campo etiqueta="Email" type="email" value={email}
-//        onChange={(e) => setEmail(e.target.value)}
-//        error={emailValido ? '' : 'Revisá el formato del email.'} />
-//
-// type="password" agrega el botón Ver / Ocultar.
-// multilinea convierte el input en <textarea>.
-
 export function Campo({
   etiqueta,
   error = '',
   ayuda = '',
   type = 'text',
   multilinea = false,
-  extra = null, // algo a la derecha de la etiqueta (ej: link "¿La olvidaste?")
+  extra = null,
   className = '',
   id,
   ...props

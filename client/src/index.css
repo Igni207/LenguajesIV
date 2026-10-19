@@ -1,24 +1,15 @@
 @import "tailwindcss";
 
-/* ==========================================================================
-   Sistema de diseño — tokens del Manual de Marca
-   Tailwind v4: cada variable de @theme genera sus clases.
-   --color-ssanty          → bg-ssanty, text-ssanty, border-ssanty…
-   --color-ssanty-profundo → bg-ssanty-profundo…
-   --font-display          → font-display
-   --ease-salida           → ease-salida
-   ========================================================================== */
-
+/* colores, fuentes y tiempos. Si necesitan uno nuevo avísenme - Rojo */
+/* Fexx: para los gráficos usá fexx, ssanty, ultronzi, rojo en ese orden */
 @theme {
-  /* Neutros */
-  --color-tinta: #161923;    /* fondo principal */
-  --color-grafito: #20242f;  /* tarjetas, navbar, paneles */
-  --color-pizarra: #3a3f52;  /* bordes, divisores, inputs */
-  --color-niebla: #9ba1b3;   /* texto secundario */
-  --color-papel: #eeebe4;    /* texto principal */
-  --color-arena: #e6c77e;    /* advertencia */
+  --color-tinta: #161923;
+  --color-grafito: #20242f;
+  --color-pizarra: #3a3f52;
+  --color-niebla: #9ba1b3;
+  --color-papel: #eeebe4;
+  --color-arena: #e6c77e;
 
-  /* Un color por integrante: claro (acentos) y profundo (fondos grandes) */
   --color-fexx: #7c9ce4;
   --color-fexx-profundo: #2c3e66;
   --color-ssanty: #6fcdbe;
@@ -28,22 +19,18 @@
   --color-rojo: #ee8e80;
   --color-rojo-profundo: #6a3530;
 
-  /* Semánticos (reutilizan la paleta) */
   --color-exito: #b6d76e;
   --color-error: #ee8e80;
   --color-info: #7c9ce4;
   --color-advertencia: #e6c77e;
 
-  /* Tipografía */
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Curvas de movimiento */
-  --ease-salida: cubic-bezier(0.22, 1, 0.36, 1); /* GSAP: expo.out */
-  --ease-suave: cubic-bezier(0.65, 0, 0.35, 1);  /* GSAP: sine.inOut */
+  --ease-salida: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-suave: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* Animaciones reutilizables (clases animate-*) */
   --animate-codigo: codigo-corre 18s linear infinite;
   --animate-girar: spin 0.8s linear infinite;
   --animate-entrar: entrar 0.4s var(--ease-salida) both;
@@ -63,7 +50,6 @@
   }
 }
 
-/* Duraciones del manual, para usar en CSS o en GSAP (ver src/data/movimiento.js) */
 :root {
   --dur-rapida: 150ms;
   --dur-media: 300ms;
@@ -79,7 +65,7 @@
   body {
     @apply bg-tinta text-papel font-sans;
     min-height: 100dvh;
-    overflow-x: clip; /* las ventanas inclinadas no generan scroll lateral */
+    overflow-x: clip;
   }
   h1, h2, h3, h4 {
     @apply font-display font-bold;
@@ -88,7 +74,7 @@
   ::selection {
     background: color-mix(in srgb, var(--color-fexx) 40%, transparent);
   }
-  /* Foco visible en todo el sitio: 2 px en Azul Bruma */
+
   :focus-visible {
     outline: 2px solid var(--color-fexx);
     outline-offset: 3px;
@@ -96,14 +82,12 @@
 }
 
 @layer components {
-  /* Etiqueta en mayúsculas mono (ej: "01 — Lead Frontend") */
   .etiqueta {
     @apply font-mono text-[13px] uppercase;
     letter-spacing: 0.08em;
   }
 }
 
-/* Accesibilidad del movimiento: si el usuario lo pide, sin animaciones */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

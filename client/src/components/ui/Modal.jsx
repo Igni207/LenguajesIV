@@ -2,15 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { DURACION, EASE } from '../../data/movimiento'
-
-// Modal animado: fondo desenfocado + panel que escala de 0.96 a 1.
-// Cierra con Escape, con clic en el fondo o con el botón ×.
-// Bloquea el scroll de la página y devuelve el foco al cerrar.
-//
-// <Modal abierto={abierto} onCerrar={() => setAbierto(false)} titulo="Esto es para miembros">
-//   ...contenido...
-// </Modal>
-
+// Fexx: te sirve para el "¿seguro que querés borrar?" del admin - Rojo
 const enfocables =
   'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
@@ -21,9 +13,6 @@ export function Modal({ abierto, onCerrar, titulo, icono = null, children, ancho
   const focoPrevio = useRef(null)
   const idTitulo = useId()
 
-  // Montar al abrir; al cerrar, primero animar y después desmontar.
-  // (Ajustar estado durante el render es el patrón recomendado por React
-  // para derivar estado de props, en lugar de hacerlo en un efecto.)
   if (abierto && !montado) setMontado(true)
 
   useEffect(() => {
@@ -59,7 +48,6 @@ export function Modal({ abierto, onCerrar, titulo, icono = null, children, ancho
 
   const alTeclear = (e) => {
     if (e.key === 'Escape') onCerrar?.()
-    // Mantener el foco dentro del modal con Tab
     if (e.key === 'Tab') {
       const lista = [...panelRef.current.querySelectorAll(enfocables)]
       if (!lista.length) return
@@ -112,7 +100,6 @@ export function Modal({ abierto, onCerrar, titulo, icono = null, children, ancho
   )
 }
 
-// Ícono de candado para el modal de acceso y el contenido bloqueado.
 export function IconoCandado({ tamaño = 32, className = 'text-ssanty' }) {
   return (
     <svg width={tamaño} height={tamaño} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>

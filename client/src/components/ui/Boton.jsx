@@ -1,19 +1,5 @@
 import { Spinner } from './Spinner'
-
-// Botón del sistema de diseño.
-//
-// variante: 'primario' (relleno de color) | 'secundario' (borde) | 'fantasma' (solo texto)
-// color:    'fexx' | 'ssanty' | 'ultronzi' | 'rojo' | 'papel'   (solo para 'primario')
-// tamaño:   'md' | 'lg'
-// cargando: muestra spinner y deshabilita
-// href:     si se pasa, se renderiza como <a> (para links con estilo de botón)
-//
-// Ejemplos:
-//   <Boton>Enviar</Boton>
-//   <Boton color="ssanty" href="/equipo/ssanty">Ver perfil →</Boton>
-//   <Boton variante="secundario" onClick={...}>Cancelar</Boton>
-//   <Boton cargando={enviando} type="submit">Ingresar</Boton>
-
+// Si le pasás href se vuelve un link - Rojo
 const rellenos = {
   fexx: 'bg-fexx',
   ssanty: 'bg-ssanty',

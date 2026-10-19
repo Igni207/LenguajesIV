@@ -1,5 +1,4 @@
-// Foto recortada del integrante. Mientras no haya foto (integrante.foto === null)
-// muestra una silueta de reemplazo con el borde de su color.
+// cuando tengamos las fotos recortadas van en public/fotos y se cambia foto en integrantes.js - Rojo
 
 export function Silueta({ integrante, className = '' }) {
   if (integrante.foto) {

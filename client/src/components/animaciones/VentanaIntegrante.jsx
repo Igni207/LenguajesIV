@@ -10,21 +10,11 @@ import { Boton } from '../ui/Boton'
 import { Chip } from '../ui/Chip'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
-
-// "Ventana al detrás de la web": un rectángulo inclinado con código corriendo
-// adentro, el color del integrante que sube desde abajo y su silueta que
-// emerge y sobresale por arriba del marco. Al lado, bio breve y botón.
-//
-// Se anima una sola vez, cuando la ventana entra en pantalla (ScrollTrigger).
-//
-// <VentanaIntegrante integrante={integrantes[0]} numero={1} inclinacion={-4} />
-// <VentanaIntegrante integrante={integrantes[1]} numero={2} inclinacion={5} invertida />
-
 export function VentanaIntegrante({ integrante, numero, inclinacion = -4, invertida = false, hrefPerfil }) {
   const raiz = useRef(null)
   const reducido = useMovimientoReducido()
   const c = coloresIntegrante[integrante.clase]
-  const lineas = [...integrante.codigo, ...integrante.codigo] // duplicado para el bucle infinito
+  const lineas = [...integrante.codigo, ...integrante.codigo]
 
   useGSAP(
     () => {
@@ -47,13 +37,11 @@ export function VentanaIntegrante({ integrante, numero, inclinacion = -4, invert
       ref={raiz}
       className={`flex flex-col items-center gap-10 md:gap-16 ${invertida ? 'md:flex-row-reverse' : 'md:flex-row'}`}
     >
-      {/* Lado de la ventana */}
       <div className="flex w-full min-w-0 flex-1 justify-center">
         <div
           className="group relative mt-24 h-[260px] w-full max-w-[460px] transition-transform duration-500 ease-salida hover:rotate-0! sm:h-[300px]"
           style={{ rotate: `${inclinacion}deg` }}
         >
-          {/* La ventana: fondo, color que sube y código */}
           <div
             data-ventana
             className="absolute inset-0 overflow-hidden rounded-2xl bg-grafito"
@@ -68,9 +56,7 @@ export function VentanaIntegrante({ integrante, numero, inclinacion = -4, invert
             </pre>
           </div>
 
-          {/* La silueta: solo se recorta por los costados y abajo, así la cabeza sale del marco */}
           <div className="pointer-events-none absolute inset-0 [clip-path:inset(-200px_0_0_0)]">
-            {/* GSAP anima data-silueta; el hover va en un hijo para no pisarse */}
             <div data-silueta className="absolute inset-x-0 bottom-0 mx-auto h-[330px] w-[220px] sm:h-[360px] sm:w-[240px]">
               <div className="h-full w-full transition-transform duration-500 ease-salida group-hover:-translate-y-2">
                 <Silueta integrante={integrante} />
@@ -80,7 +66,6 @@ export function VentanaIntegrante({ integrante, numero, inclinacion = -4, invert
         </div>
       </div>
 
-      {/* Lado del texto */}
       <div data-texto className="flex w-full min-w-0 max-w-[480px] flex-1 flex-col gap-[18px]">
         <span className={`etiqueta ${c.text}`}>
           {String(numero).padStart(2, '0')} — {integrante.rol}

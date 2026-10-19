@@ -1,5 +1,4 @@
-// Punto de entrada de los componentes base.
-// import { Boton, Campo, Modal, useToast } from '../components/ui'
+// importen los componentes desde acá - Rojo
 
 export { Boton } from './Boton'
 export { Campo } from './Campo'
