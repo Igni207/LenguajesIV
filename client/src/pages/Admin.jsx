@@ -141,7 +141,7 @@ function VistaProyectos({ abrirModal }) {
   const [proyectos, setProyectos] = useState([]);
   const [cargando, setCargando] = useState(true);
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/metrics`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/projects`)
       .then(res => res.json())
       .then(data => {
         setProyectos(data);
