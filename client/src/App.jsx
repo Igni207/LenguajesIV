@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import GuiaDeEstilo from './pages/GuiaDeEstilo';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 import LoginModal from './components/LoginModal';
 
 export default function App() {
@@ -12,23 +13,33 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/guia" replace />} />
           <Route path="/guia" element={<GuiaDeEstilo />} />
-          
-          {/* Ruta de Login / Modal */}
-          <Route path="/login" element={<LoginModal isOpen={true} onClose={() => window.history.back()} />} />
 
-          <Route
-            path="/admin"
+          {/* Login */}
+          <Route path="/login" element={<LoginModal isOpen={true} isStandalone={true} />} />
+
+          {/* Panel de administrador */}
+          <Route 
+            path="/admin" 
             element={
               <ProtectedRoute requireAdmin={true}>
                 <Admin />
               </ProtectedRoute>
-            }
+            } 
           />
 
-          <Route path="*" element={<h1>404 - Página no encontrada</h1>} />
+          {/* Perfil de usuario */}
+          <Route 
+            path="/perfil" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route path="*" element={<Navigate to="/guia" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
-  
 }
