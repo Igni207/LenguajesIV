@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { DURACION, EASE } from '../../data/movimiento'
+
+// Para avisos: const { mostrar } = useToast() y mostrar({ tipo: 'exito', titulo: 'Listo' })
 // El provider ya está puesto en main.jsx - Rojo
 const ContextoToast = createContext(null)
 

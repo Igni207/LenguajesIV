@@ -10,6 +10,7 @@ import { Boton } from '../ui/Boton'
 import { Chip } from '../ui/Chip'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
+// se anima una sola vez cuando aparece en pantalla - Rojo
 export function VentanaIntegrante({ integrante, numero, inclinacion = -4, invertida = false, hrefPerfil }) {
   const raiz = useRef(null)
   const reducido = useMovimientoReducido()

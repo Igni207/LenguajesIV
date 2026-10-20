@@ -8,6 +8,7 @@ import { Silueta } from './Silueta'
 import { Boton } from '../ui/Boton'
 
 gsap.registerPlugin(useGSAP)
+// ojo: a lo que anima gsap no le pongan clases translate-* de tailwind, gsap las pisa - Rojo
 export function HeroIntegrantes({ intervalo = 5 }) {
   const raiz = useRef(null)
   const fotos = useRef([])

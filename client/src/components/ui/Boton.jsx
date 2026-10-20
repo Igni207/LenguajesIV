@@ -1,4 +1,6 @@
 import { Spinner } from './Spinner'
+
+// Santy: variante = primario / secundario / fantasma, color = el de cada uno.
 // Si le pasás href se vuelve un link - Rojo
 const rellenos = {
   fexx: 'bg-fexx',

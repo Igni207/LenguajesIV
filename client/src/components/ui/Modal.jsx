@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { DURACION, EASE } from '../../data/movimiento'
+
+// Santy: este es el modal para lo bloqueado (abierto, onCerrar, titulo).
 // Fexx: te sirve para el "¿seguro que querés borrar?" del admin - Rojo
 const enfocables =
   'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'

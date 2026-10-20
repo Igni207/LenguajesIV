@@ -3,6 +3,7 @@ import { integrantes } from '../data/integrantes'
 import { HeroIntegrantes } from '../components/animaciones/HeroIntegrantes'
 import { VentanaIntegrante } from '../components/animaciones/VentanaIntegrante'
 import { Boton, Campo, Chip, Esqueleto, IconoCandado, Modal, Spinner, useToast } from '../components/ui'
+// página de prueba nomás, para ver todo junto - Rojo
 const neutros = [
   ['Tinta', '#161923', 'bg-tinta border border-pizarra'],
   ['Grafito', '#20242F', 'bg-grafito'],

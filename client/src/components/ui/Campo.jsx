@@ -1,4 +1,6 @@
 import { useId, useState } from 'react'
+
+// Santy: la validación la hacés vos, acá solo le pasás el error como texto y se pinta - Rojo
 export function Campo({
   etiqueta,
   error = '',
