@@ -1,0 +1,69 @@
+-- Estructura de la base de datos del portfolio
+-- Motor: PostgreSQL (Supabase)
+
+CREATE TABLE usuarios (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  rol VARCHAR(10) NOT NULL DEFAULT 'user',
+  proveedor VARCHAR(10) NOT NULL DEFAULT 'email',
+  acepta_terminos BOOLEAN NOT NULL DEFAULT FALSE,
+  origen_registro VARCHAR(20),
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE proyectos (
+  id SERIAL PRIMARY KEY,
+  titulo VARCHAR(150) NOT NULL,
+  descripcion TEXT,
+  imagen_url VARCHAR(500),
+  demo_url VARCHAR(500),
+  repo_url VARCHAR(500),
+  tipo VARCHAR(50),
+  autor VARCHAR(100),
+  tecnologias VARCHAR(300),
+  destacado BOOLEAN NOT NULL DEFAULT FALSE,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE servicios (
+  id SERIAL PRIMARY KEY,
+  titulo VARCHAR(150) NOT NULL,
+  descripcion TEXT,
+  precio_desde NUMERIC(10,2),
+  activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE consultas (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  tipo VARCHAR(20) NOT NULL DEFAULT 'general',
+  mensaje TEXT NOT NULL,
+  estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+  respuesta TEXT,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE visitas (
+  id SERIAL PRIMARY KEY,
+  ruta VARCHAR(200) NOT NULL,
+  usuario_id INT REFERENCES usuarios(id) ON DELETE SET NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE logins (
+  id SERIAL PRIMARY KEY,
+  usuario_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  proveedor VARCHAR(10) NOT NULL DEFAULT 'email',
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE proyectos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE servicios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE consultas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visitas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE logins ENABLE ROW LEVEL SECURITY;

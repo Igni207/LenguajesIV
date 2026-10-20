@@ -1,9 +1,13 @@
 // gonzi: te dejo el server levantado con express, despues conecta la bdd - fexx
+// fexx: GET /api/projects ya lee de la base (metrics y POST siguen de prueba). --gonzi
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const pool = require('./db');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
 // datos hardcodeados temporalmente
 const metricasTotales = { visitas: 1248, usuarios: 42, consultas: 5 };
 const datosEvolucion = [
@@ -24,6 +28,7 @@ let proyectos = [
   { id: 1, titulo: 'E-commerce React', tipo: 'Frontend', destacado: true, autor: 'Ssanty' },
   { id: 2, titulo: 'API de Facturación', tipo: 'Backend', destacado: false, autor: 'Ultronzi' }
 ];
+
 // endpoints para el dashboard
 app.get('/api/metrics', (req, res) => {
   res.json({
@@ -32,16 +37,30 @@ app.get('/api/metrics', (req, res) => {
     origen: datosOrigen
   });
 });
-app.get('/api/projects', (req, res) => {
-  res.json(proyectos);
+
+app.get('/api/projects', async (req, res) => {
+  try{
+    const resultado = await pool.query(
+      `SELECT id, titulo, descripcion, tipo, destacado, autor
+      FROM proyectos
+      WHERE activo = true
+      ORDER BY creado_en DESC`
+    );
+    res.json(resultado.rows);
+  } catch (error) {
+    console.error('Error al obtener proyectos: ', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener los proyectos' });
+  }
 });
+
 // santi: este endpoint recibe los proyectos nuevos desde el modal, aclaro por las ddas - fexx
 app.post('/api/projects', (req, res) => {
   const nuevoProyecto = { id: Date.now(), ...req.body };
   proyectos.push(nuevoProyecto);
   res.status(201).json(nuevoProyecto);
 });
-const PORT = 3000;
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`servidor corriendo en http://localhost:${PORT}`);
 });
