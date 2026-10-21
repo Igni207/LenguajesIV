@@ -1,0 +1,71 @@
+### Acá se pueden hacer algunas pruebas, pero deben instalar el REST Client
+### las pruebas se hacen tocando el Send Request que sale arriba de cada 'POST'
+
+### Registro correcto
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Usuario Prueba",
+  "email": "prueba@mail.com",
+  "password": "clave12345"
+}
+
+### Registro con todo vacío (debería dar 400)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{}
+
+### Contraseña corta (debería dar 400)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Otro Usuario",
+  "email": "otro@mail.com",
+  "password": "123"
+}
+
+### mismo mail (deberia dar 409)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "otro usuario",
+    "email": "prueba@mail.com",
+    "password": "clave00000"
+}
+
+### Login correcto
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email":"prueba@mail.com",
+    "password":"clave12345"
+}
+
+### contraseña incorrecta (401)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "prueba@mail.com",
+    "password": "otraclave000"
+}
+
+### email que no existe (401)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "nadie@mail.com",
+    "password": "clave12345"
+}
+
+### vacio (400)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{}
