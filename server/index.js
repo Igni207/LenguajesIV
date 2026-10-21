@@ -40,6 +40,28 @@ app.get('/api/metrics', (req, res) => {
   });
 });
 
+//Guardia(middleware): Exige un token válido
+function requireAuth(req, res, next) {
+  const [tipo, token] = (req.headers.authorization || '').split(' ');
+  if (tipo !== 'Bearer' || !token) {
+    return res.status(401).json({mensaje: 'Necesitás iniciar sesión'});
+  }
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    next();
+  } catch {
+    res.status(401).json({mensaje: 'Tu sesión venció o no es válida. Iniciá sesión de nuevo.'});
+  }
+}
+
+//Guardia(middleware): Exige ser Admin (se usa Después de requireAuth)
+function requireAdmin (req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ mensaje: 'No tenés permiso para hacer esto.' });
+  }
+  next();
+}
+
 app.get('/api/projects', async (req, res) => {
   try{
     const resultado = await pool.query(
@@ -146,6 +168,69 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Error en el login: ', error.message);
     res.status(500).json({ mensaje: 'Error al iniciar sesión' });
+  }
+});
+
+app.get('/api/auth/me', requireAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT id, nombre, email, rol FROM usuarios WHERE id = $1',
+      [req.user.id]
+    );
+    const u = r.rows[0];
+    if (!u) return res.status(401).json({ mensaje: 'El usuario ya no existe.' });
+    res.json({ user: { id: u.id, name: u.nombre, email: u.email, role: u.rol } });
+  } catch (error) {
+    console.error('Error en /me:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener el usuario' });
+  }
+});
+
+app.get('/api/projects/:id', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ mensaje: 'Id inválido.' });
+    }
+    const r = await pool.query(
+      `SELECT id, titulo, descripcion, imagen_url, demo_url, repo_url,
+              tipo, autor, tecnologias, destacado
+       FROM proyectos
+       WHERE id = $1 AND activo = true`,
+      [id]
+    );
+    if (r.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+    }
+    res.json(r.rows[0]);
+  } catch (error) {
+    console.error('Error al obtener el proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener el proyecto' });
+  }
+});
+
+const ETIQUETA_ORIGEN = {
+  proyecto: 'Proyectos',
+  demo: 'Demos',
+  cv: 'Descarga CV',
+  ver_todo: 'Ver todo'
+};
+
+app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT id, nombre, email, rol, origen_registro FROM usuarios ORDER BY creado_en DESC'
+    );
+    res.json(r.rows.map((u) => ({
+      id: u.id,
+      nombre: u.nombre,
+      email: u.email,
+      origen: ETIQUETA_ORIGEN[u.origen_registro] || 'sin dato',
+      rol: u.rol === 'admin' ? 'Administrador' : 'Usuario'
+    })));
+  } catch (error) {
+    console.error('Error al listar usuarios:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener los usuarios' });
   }
 });
 
