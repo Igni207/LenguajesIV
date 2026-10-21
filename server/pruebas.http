@@ -1,0 +1,112 @@
+### Acá se pueden hacer algunas pruebas, pero deben instalar el REST Client
+### las pruebas se hacen tocando el Send Request que sale arriba de cada 'POST'
+### NUNCA DEJAR LOS TOKENS, son de usar y borrar
+
+### Registro correcto (ahora es el registro de admin)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Usuario Prueba",
+  "email": "prueba@mail.com",
+  "password": "clave12345"
+}
+
+### Registro de usuario normal
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Usuario Normal",
+  "email": "normal@mail.com",
+  "password": "clave123456"
+}
+
+### Registro con todo vacío (debería dar 400)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{}
+
+### Contraseña corta (debería dar 400)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Otro Usuario",
+  "email": "otro@mail.com",
+  "password": "123"
+}
+
+### mismo mail (deberia dar 409)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "name": "otro usuario",
+    "email": "prueba@mail.com",
+    "password": "clave00000"
+}
+
+### Login correcto ( ahora Login del admin)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{ "email": "prueba@mail.com", "password": "clave12345" }
+
+### Login del usuario normal
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{ "email": "normal@mail.com", "password": "clave123456" }
+
+
+### contraseña incorrecta (401)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "prueba@mail.com",
+    "password": "otraclave000"
+}
+
+### email que no existe (401)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "nadie@mail.com",
+    "password": "clave12345"
+}
+
+### vacio (400)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{}
+
+
+### me SIN token -> 401
+GET http://localhost:3000/api/auth/me
+
+### me con token falso -> 401
+GET http://localhost:3000/api/auth/me
+Authorization: Bearer abc.def.ghi
+
+### me con token de admin -> 200
+GET http://localhost:3000/api/auth/me
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+### Detalle de proyecto SIN token -> 401
+GET http://localhost:3000/api/projects/1
+
+### Detalle de proyecto con token -> 200
+GET http://localhost:3000/api/projects/1
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+### Usuarios con token NORMAL -> 403
+GET http://localhost:3000/api/users
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+### Usuarios con token ADMIN -> 200
+GET http://localhost:3000/api/users
+Authorization: Bearer PEGAR_TOKEN_ADMIN
