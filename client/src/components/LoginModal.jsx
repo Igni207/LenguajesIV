@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function LoginModal({ isOpen, onClose }) {
+export default function LoginModal({ isOpen, onClose, isStandalone = false }) {
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/guia';
+  const from = location.state?.from?.pathname;
 
   if (!isOpen) return null;
 
@@ -37,16 +37,21 @@ export default function LoginModal({ isOpen, onClose }) {
       return;
     }
 
+    const isAdmin = email.toLowerCase().includes('admin');
     const userData = {
-      name: isRegister ? name : 'Usuario',
+      name: isRegister ? name : (isAdmin ? 'Administrador' : 'Usuario'),
       email,
-      role: email.includes('admin') ? 'admin' : 'user'
+      role: isAdmin ? 'admin' : 'user'
     };
 
     login(userData);
-    
-    if (onClose) onClose();
-    navigate(from, { replace: true });
+
+    if (!isStandalone && onClose) {
+      onClose();
+    }
+
+    const targetPath = from || (isAdmin ? '/admin' : '/perfil');
+    navigate(targetPath, { replace: true });
   };
 
   return (
@@ -56,7 +61,7 @@ export default function LoginModal({ isOpen, onClose }) {
           <h2 className="text-xl font-bold text-gray-800">
             {isRegister ? 'Registro Obligatorio' : 'Iniciar Sesión'}
           </h2>
-          {onClose && (
+          {!isStandalone && onClose && (
             <button onClick={onClose} className="text-gray-500 hover:text-gray-700 font-bold">
               ✕
             </button>
@@ -109,7 +114,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
           <button
             type="submit"
-            className="w-full py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
+            className="w-full py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition font-medium"
           >
             {isRegister ? 'Registrarse y Continuar' : 'Entrar'}
           </button>
