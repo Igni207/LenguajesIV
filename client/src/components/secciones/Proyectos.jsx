@@ -6,9 +6,9 @@ import { Boton, Chip, Esqueleto, IconoCandado, Modal, useToast } from '../ui'
 import { integrantes } from '../../data/integrantes'
 import { Encabezado } from './Encabezado'
 
-// el color de la tarjeta sale del autor (sirve con el alias o con el nombre) - Rojo
-const coloresAutor = Object.fromEntries(
-  integrantes.flatMap((m) => [m.alias, m.nombre, m.nombreCorto, m.id].map((n) => [n.toLowerCase(), m.claro])),
+// el autor de la base puede venir con apodo o nombre: lo pasamos al integrante para mostrar su nombre y color - Rojo
+const porAutor = Object.fromEntries(
+  integrantes.flatMap((m) => [m.alias, m.nombre, m.nombreCorto, m.id].map((n) => [n.toLowerCase(), m])),
 )
 
 // Gonzi: leo GET /api/projects (titulo, descripcion, tipo, destacado, autor).
@@ -139,7 +139,8 @@ export function Proyectos({ proyectos, cargando, error, reintentar }) {
 }
 
 function TarjetaProyecto({ proyecto, onDetalle }) {
-  const color = coloresAutor[(proyecto.autor ?? '').toLowerCase()] ?? '#7C9CE4'
+  const autor = porAutor[(proyecto.autor ?? '').toLowerCase()]
+  const color = autor?.claro ?? '#7C9CE4'
   return (
     <div data-aparecer className="flex">
       <article className="group flex w-full flex-col overflow-hidden rounded-3xl bg-grafito transition-transform duration-300 ease-salida hover:-translate-y-1.5">
@@ -164,7 +165,7 @@ function TarjetaProyecto({ proyecto, onDetalle }) {
           {proyecto.descripcion && <p className="m-0 leading-relaxed text-niebla">{proyecto.descripcion}</p>}
           <div className="flex flex-wrap gap-2">
             {proyecto.tipo && <Chip>{proyecto.tipo}</Chip>}
-            {proyecto.autor && <Chip>{proyecto.autor}</Chip>}
+            {proyecto.autor && <Chip>{autor?.nombreCorto ?? proyecto.autor}</Chip>}
           </div>
           <div className="mt-auto pt-2">
             <Boton variante="secundario" onClick={onDetalle}>Ver detalle</Boton>

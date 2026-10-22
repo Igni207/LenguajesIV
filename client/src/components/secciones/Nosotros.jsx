@@ -47,7 +47,7 @@ export function Nosotros({ cantidadProyectos }) {
           Cuatro perfiles, un mismo stack.
         </h2>
         <p className="m-0 text-[19px] leading-relaxed text-niebla">
-          [Cómo trabajamos como equipo: en qué nos especializamos, cómo nos repartimos un proyecto y qué tipo de soluciones construimos. 2 o 3 líneas.]
+          Somos cuatro estudiantes de la UCASAL que se reparten un proyecto de punta a punta: diseño, frontend, backend y datos. Cada uno se especializa en una parte y todos revisamos el trabajo de todos.
         </p>
       </div>
       <div data-aparecer className="grid min-w-0 flex-[1_1_360px] grid-cols-3 gap-3 sm:gap-4">

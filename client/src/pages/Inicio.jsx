@@ -27,6 +27,13 @@ export default function Inicio() {
     pedir()
   }, [pedir])
 
+  // si llegan de otra página a /#proyectos, bajamos a esa sección - Rojo
+  useEffect(() => {
+    if (!window.location.hash) return
+    const t = setTimeout(() => document.querySelector(window.location.hash)?.scrollIntoView(), 150)
+    return () => clearTimeout(t)
+  }, [])
+
   const reintentar = () => {
     setCargando(true)
     setError(false)

@@ -1,5 +1,4 @@
-// Gonzi: después esto tendría que venir de la API, por ahora está a mano.
-// Chicos: completen sus bios y chips - Rojo
+// Gonzi: después esto tendría que venir de la API, por ahora está a mano - Rojo
 
 export const integrantes = [
   {
@@ -13,9 +12,30 @@ export const integrantes = [
     clase: 'fexx',
     claro: '#7C9CE4',
     profundo: '#2C3E66',
-    bio: '[Bio breve de Ezequiel: 2 o 3 líneas sobre qué hace y qué le gusta construir.]',
+    bio: 'Me gusta convertir datos en paneles claros y fáciles de leer. En el equipo me ocupo del panel de administración, las métricas y que todo llegue andando a producción.',
     chips: ['Dashboards', 'Chart.js', 'CI/CD'],
     foto: null,
+    ciudad: 'Salta, Argentina',
+    contacto: {
+      email: 'ezequiel.silvera.sandoval@gmail.com',
+      telefono: '+54 9 387 586-6708',
+      whatsapp: '5493875866708',
+    },
+    cv: {
+      educacion: [
+        {
+          desde: '2024',
+          hasta: 'En curso',
+          titulo: 'Carrera de grado',
+          lugar: 'Universidad Católica de Salta',
+        },
+        {
+          hasta: '2023',
+          titulo: 'Bachiller en Ciencias Sociales y Humanidades',
+          lugar: 'Educación secundaria',
+        },
+      ],
+    },
     codigo: [
       "const visitas = await api.get('/metrics');",
       'chart.render(visitas.porDia);',
@@ -34,11 +54,32 @@ export const integrantes = [
     alias: 'Ssanty',
     rol: 'Lead Frontend',
     clase: 'ssanty',
-    claro: '#6FCDBE',
-    profundo: '#1F5650',
-    bio: '[Bio breve de Santiago: 2 o 3 líneas sobre qué hace y qué le gusta construir.]',
+    claro: '#C29FE6',
+    profundo: '#45305E',
+    bio: 'Armo interfaces en React pensando en que se entiendan y respondan rápido. En el equipo llevo la estructura del frontend, las rutas y el manejo de sesión.',
     chips: ['React', 'React Router', 'Vite'],
     foto: null,
+    ciudad: 'Salta, Argentina',
+    contacto: {
+      email: 'santichocovarios@gmail.com',
+      telefono: '+54 9 387 449-7921',
+      whatsapp: '5493874497921',
+    },
+    cv: {
+      educacion: [
+        {
+          desde: '2024',
+          hasta: 'En curso',
+          titulo: 'Carrera de grado',
+          lugar: 'Universidad Católica de Salta',
+        },
+        {
+          hasta: '2023',
+          titulo: 'Bachiller en Ciencias Sociales y Humanidades',
+          lugar: 'Educación secundaria',
+        },
+      ],
+    },
     codigo: [
       'export default function App() {',
       '  const [user, setUser] = useState(null);',
@@ -61,9 +102,69 @@ export const integrantes = [
     clase: 'ultronzi',
     claro: '#B6D76E',
     profundo: '#3F5326',
-    bio: '[Bio breve de Gonzalo: 2 o 3 líneas sobre qué hace y qué le gusta construir.]',
+    bio: 'Me ocupo de lo que no se ve: la base de datos, la API y la seguridad. Me gusta que los datos estén ordenados y que cada consulta sea rápida y segura.',
     chips: ['Node + Express', 'JWT', 'SQL'],
     foto: null,
+    ciudad: 'Salta, Argentina',
+    contacto: {
+      email: 'gonchylaluna@gmail.com',
+      telefono: '+54 9 387 516-2690',
+      whatsapp: '5493875162690',
+    },
+    tema: 'base-de-datos',
+    cv: {
+      titulo: 'Desarrollador backend',
+      sobreMi:
+        'Estudiante de la Universidad Católica de Salta desde 2024 y nuevo en el mundo del desarrollo. Empecé programando el movimiento y la recolección de ítems de Gonzi The Orc Slayer, un juego 2D, después trabajé con bases de datos en Numerika AI y hoy llevo el backend de este portfolio. Disfruto pensar cómo se relacionan las tablas y construir APIs ordenadas, seguras y fáciles de mantener.',
+      experiencia: [
+        {
+          desde: '2026',
+          hasta: 'Actualidad',
+          puesto: 'Tech Lead y backend',
+          lugar: 'Portfolio del equipo · Lenguajes IV, UCASAL',
+          descripcion: 'Base de datos en PostgreSQL (Supabase), API REST con Node y Express, registro y login con contraseñas cifradas y JWT, y rutas protegidas por rol. Es esta misma web.',
+        },
+        {
+          desde: '2025',
+          hasta: '2026',
+          puesto: 'Bases de datos',
+          lugar: 'Numerika AI',
+          descripcion: 'Trabajé con la base de datos de Numerika AI, una calculadora con inteligencia artificial integrada.',
+        },
+        {
+          desde: '2024',
+          hasta: 'Inicios de 2025',
+          puesto: 'Motor de movimiento y recolección de ítems',
+          lugar: 'Gonzi The Orc Slayer · videojuego 2D',
+          descripcion: 'Encargado del motor de movimiento del personaje y del sistema para recolectar ítems en Gonzi The Orc Slayer, un juego 2D que hicimos en equipo.',
+        },
+      ],
+      educacion: [
+        {
+          desde: '2024',
+          hasta: 'En curso',
+          titulo: 'Carrera de grado',
+          lugar: 'Universidad Católica de Salta',
+        },
+        {
+          hasta: '2023',
+          titulo: 'Bachiller en Ciencias Sociales y Humanidades',
+          lugar: 'Educación secundaria',
+        },
+      ],
+      habilidades: [
+        { nombre: 'PostgreSQL', nivel: 85 },
+        { nombre: 'Node.js + Express', nivel: 80 },
+        { nombre: 'SQL', nivel: 85 },
+        { nombre: 'JWT y seguridad', nivel: 70 },
+        { nombre: 'Supabase', nivel: 70 },
+        { nombre: 'Git', nivel: 75 },
+      ],
+      idiomas: [
+        { nombre: 'Español', nivel: 'Nativo' },
+        { nombre: 'Inglés', nivel: 'Intermedio' },
+      ],
+    },
     codigo: [
       "app.post('/api/auth/login', async (req, res) => {",
       '  const user = await db.users.find(req.body.email);',
@@ -84,9 +185,30 @@ export const integrantes = [
     clase: 'rojo',
     claro: '#EE8E80',
     profundo: '#6A3530',
-    bio: '[Bio breve de Juan: 2 o 3 líneas sobre qué hace y qué le gusta construir.]',
+    bio: 'Diseño y animo interfaces que se sientan vivas sin cansar la vista. En el equipo me encargo de la identidad visual, el sistema de diseño y las animaciones.',
     chips: ['GSAP', 'Lottie', 'Tailwind'],
     foto: null,
+    ciudad: 'Salta, Argentina',
+    contacto: {
+      email: 'ignirq2006@gmail.com',
+      telefono: '+54 9 387 567-5809',
+      whatsapp: '5493875675809',
+    },
+    cv: {
+      educacion: [
+        {
+          desde: '2024',
+          hasta: 'En curso',
+          titulo: 'Carrera de grado',
+          lugar: 'Universidad Católica de Salta',
+        },
+        {
+          hasta: '2023',
+          titulo: 'Bachiller en Ciencias Económicas',
+          lugar: 'Educación secundaria',
+        },
+      ],
+    },
     codigo: [
       "gsap.from('.silueta', {",
       '  yPercent: 100,',

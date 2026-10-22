@@ -1,6 +1,6 @@
 const fila1 = ['React', 'Vite', 'Tailwind CSS', 'GSAP', 'Lottie', 'React Router', 'Recharts']
 const fila2 = ['Node.js', 'Express', 'PostgreSQL', 'Supabase', 'JWT', 'Git', 'Vercel']
-const colores = ['#7C9CE4', '#6FCDBE', '#B6D76E', '#EE8E80']
+const colores = ['#7C9CE4', '#C29FE6', '#B6D76E', '#EE8E80']
 
 // cinta que se mueve sola, se frena con el mouse encima. La lista está duplicada para que el bucle no se corte - Rojo
 function Cinta({ items, reversa }) {

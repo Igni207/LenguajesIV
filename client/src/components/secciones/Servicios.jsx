@@ -19,7 +19,7 @@ const servicios = [
   {
     titulo: 'Paneles y métricas',
     texto: 'Dashboards con gráficos para ver tus datos y tomar decisiones.',
-    color: '#6FCDBE',
+    color: '#C29FE6',
     icono: 'M5 19V11M12 19V5M19 19v-6',
   },
   {

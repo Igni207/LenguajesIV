@@ -21,6 +21,9 @@ export function Navbar() {
   const [activa, setActiva] = useState('')
   const [menuAbierto, setMenuAbierto] = useState(false)
   const menuRef = useRef(null)
+  // fuera de la home los links llevan a /#seccion - Rojo
+  const enInicio = location.pathname === '/'
+  const prefijo = enInicio ? '' : '/'
 
   useEffect(() => {
     const alScrollear = () => setScrolleado(window.scrollY > 40)
@@ -69,7 +72,7 @@ export function Navbar() {
         }`}
       >
         <nav aria-label="Principal" className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-8 lg:px-12">
-          <a href="#inicio" className="font-display text-[22px] font-bold tracking-[-0.02em] text-papel no-underline">
+          <a href={enInicio ? '#inicio' : '/'} className="font-display text-[22px] font-bold tracking-[-0.02em] text-papel no-underline">
             [equipo]<span className="text-fexx">_</span>
           </a>
 
@@ -77,7 +80,7 @@ export function Navbar() {
             {links.map((l) => (
               <li key={l.id}>
                 <a
-                  href={`#${l.id}`}
+                  href={`${prefijo}#${l.id}`}
                   aria-current={activa === l.id ? 'true' : undefined}
                   className={`relative py-2 text-[15px] font-medium no-underline transition-colors duration-150 hover:text-papel ${
                     activa === l.id ? 'text-papel' : 'text-papel/70'
@@ -98,12 +101,17 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <div className="hidden items-center gap-3 md:flex">
-                <span className="flex items-center gap-2 text-sm font-semibold">
+                <button
+                  type="button"
+                  onClick={() => navigate('/perfil')}
+                  title="Mi perfil"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-transparent pr-2 text-sm font-semibold text-papel hover:text-fexx"
+                >
                   <span className="flex size-9 items-center justify-center rounded-full bg-papel font-display text-tinta">
                     {(user?.name ?? 'U').slice(0, 1).toUpperCase()}
                   </span>
                   {user?.name}
-                </span>
+                </button>
                 {user?.role === 'admin' && (
                   <Boton variante="secundario" onClick={() => navigate('/admin')}>Panel</Boton>
                 )}
@@ -151,7 +159,7 @@ export function Navbar() {
             {links.map((l, i) => (
               <li key={l.id} data-link>
                 <a
-                  href={`#${l.id}`}
+                  href={`${prefijo}#${l.id}`}
                   onClick={() => setMenuAbierto(false)}
                   className="flex items-baseline gap-4 py-3 font-display text-[40px] font-bold text-papel no-underline"
                 >
@@ -165,7 +173,11 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 <span className="text-center text-sm text-niebla">Sesión iniciada como {user?.name}</span>
-                <Boton variante="secundario" tamaño="lg" onClick={logout}>Salir</Boton>
+                <Boton tamaño="lg" onClick={() => { setMenuAbierto(false); navigate('/perfil') }}>Mi perfil</Boton>
+                {user?.role === 'admin' && (
+                  <Boton variante="secundario" tamaño="lg" onClick={() => { setMenuAbierto(false); navigate('/admin') }}>Panel admin</Boton>
+                )}
+                <Boton variante="fantasma" tamaño="lg" onClick={logout}>Salir</Boton>
               </>
             ) : (
               <Boton tamaño="lg" onClick={irALogin}>Ingresar</Boton>

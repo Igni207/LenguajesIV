@@ -28,6 +28,8 @@ export default function Admin() {
           <Boton variante={vistaActiva === 'consultas' ? 'primario' : 'fantasma'} color="fexx" anchoCompleto onClick={() => setVistaActiva('consultas')}>Consultas</Boton>
           <Boton variante={vistaActiva === 'usuarios' ? 'primario' : 'fantasma'} color="fexx" anchoCompleto onClick={() => setVistaActiva('usuarios')}>Usuarios</Boton>
         </nav>
+        {/* Fexx: le agregué esto para poder volver a la home desde el panel - Rojo */}
+        <a href="/" className="hidden md:flex mt-auto items-center gap-2 text-sm font-medium text-niebla no-underline hover:text-papel">← Volver al sitio</a>
       </aside>
 
       {/* main */}
@@ -114,7 +116,7 @@ function VistaDashboard() {
                 <Tooltip contentStyle={{ backgroundColor: '#161923', borderColor: '#3a3f52', borderRadius: '8px', color: '#eeebe4' }} itemStyle={{ fontWeight: 'bold' }} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }} />
                 <Line type="monotone" name="Visitas" dataKey="visitas" stroke="#7C9CE4" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
-                <Line type="monotone" name="Usuarios" dataKey="usuarios" stroke="#6FCDBE" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
+                <Line type="monotone" name="Usuarios" dataKey="usuarios" stroke="#C29FE6" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
