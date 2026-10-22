@@ -15,6 +15,7 @@ export function HeroIntegrantes({ intervalo = 5 }) {
   const nombres = useRef([])
   const barras = useRef([])
   const anterior = useRef(0)
+  const transicion = useRef(null)
   const avance = useRef(null)
   const toque = useRef(null)
 
@@ -39,6 +40,7 @@ export function HeroIntegrantes({ intervalo = 5 }) {
     { scope: raiz },
   )
 
+  // si se cambia rápido, se corta la animación anterior y se ocultan todos menos el nuevo, así no se pisan - Rojo
   useGSAP(
     () => {
       const de = anterior.current
@@ -48,12 +50,20 @@ export function HeroIntegrantes({ intervalo = 5 }) {
       const signo = (a - de + total) % total <= total / 2 ? 1 : -1
       const d = reducido ? 0 : 1
 
+      transicion.current?.kill()
+      gsap.killTweensOf([...fotos.current, ...nombres.current, raiz.current])
+
       const tl = gsap.timeline({ defaults: { ease: EASE.salida } })
-      tl.to(fotos.current[de], { xPercent: -18 * signo, autoAlpha: 0, duration: 0.7 * d }, 0)
-        .to(nombres.current[de], { xPercent: 12 * signo, autoAlpha: 0, duration: 0.9 * d }, 0)
-        .to(raiz.current, { backgroundColor: integrantes[a].profundo, duration: DURACION.escena * d, ease: EASE.suave }, 0)
+      integrantes.forEach((_, i) => {
+        if (i === a) return
+        const sale = i === de
+        tl.to(fotos.current[i], { xPercent: sale ? -18 * signo : 0, autoAlpha: 0, duration: (sale ? 0.7 : 0.25) * d }, 0)
+        tl.to(nombres.current[i], { xPercent: sale ? 12 * signo : 0, autoAlpha: 0, duration: (sale ? 0.9 : 0.25) * d }, 0)
+      })
+      tl.to(raiz.current, { backgroundColor: integrantes[a].profundo, duration: DURACION.escena * d, ease: EASE.suave }, 0)
         .fromTo(nombres.current[a], { xPercent: -12 * signo, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 0.9, duration: 1.4 * d }, 0.15 * d)
         .fromTo(fotos.current[a], { xPercent: 18 * signo, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 1, duration: DURACION.escena * d, ease: 'back.out(1.2)' }, 0.3 * d)
+      transicion.current = tl
     },
     { dependencies: [indice], scope: raiz },
   )
@@ -168,7 +178,7 @@ export function HeroIntegrantes({ intervalo = 5 }) {
               <span ref={(el) => (barras.current[i] = el)} className="block h-full w-full origin-left" style={{ background: m.claro, transform: 'scaleX(0)' }} />
             </span>
             <span className={`hidden text-[13px] font-semibold transition-opacity duration-300 sm:block ${i === indice ? 'opacity-100' : 'opacity-55'}`}>
-              {m.nombre}
+              {m.nombreCorto}
             </span>
           </button>
         ))}

@@ -30,7 +30,7 @@ export function Silueta({ integrante, className = '' }) {
       <path d="M100 196 H140" stroke="#20242F" strokeWidth="6" />
       <circle cx="120" cy="78" r="54" fill="#20242F" stroke={integrante.claro} strokeWidth="2.5" />
       <text x="120" y="300" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="11" fill="#9BA1B3">
-        [foto {integrante.nombre}]
+        [foto {integrante.nombreCorto}]
       </text>
     </svg>
   )
