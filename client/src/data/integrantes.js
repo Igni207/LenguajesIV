@@ -31,7 +31,7 @@ export const integrantes = [
         },
         {
           hasta: '2023',
-          titulo: 'Bachiller en Ciencias Sociales y Humanidades',
+          titulo: 'Bachiller en Ciencias Económicas',
           lugar: 'Educación secundaria',
         },
       ],
@@ -148,7 +148,7 @@ export const integrantes = [
         },
         {
           hasta: '2023',
-          titulo: 'Bachiller en Ciencias Sociales y Humanidades',
+          titulo: 'Bachiller en Ciencias Económicas',
           lugar: 'Educación secundaria',
         },
       ],
