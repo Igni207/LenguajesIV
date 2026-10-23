@@ -12,8 +12,8 @@
 
   --color-fexx: #7c9ce4;
   --color-fexx-profundo: #2c3e66;
-  --color-ssanty: #6fcdbe;
-  --color-ssanty-profundo: #1f5650;
+  --color-ssanty: #c29fe6;
+  --color-ssanty-profundo: #45305e;
   --color-ultronzi: #b6d76e;
   --color-ultronzi-profundo: #3f5326;
   --color-rojo: #ee8e80;
@@ -35,6 +35,8 @@
   --animate-girar: spin 0.8s linear infinite;
   --animate-entrar: entrar 0.4s var(--ease-salida) both;
   --animate-brillo: brillo 1.4s linear infinite;
+  --animate-cinta: cinta 40s linear infinite;
+  --animate-cinta-reversa: cinta 40s linear infinite reverse;
 
   @keyframes codigo-corre {
     from { transform: translateY(0); }
@@ -43,6 +45,10 @@
   @keyframes entrar {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: none; }
+  }
+  @keyframes cinta {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
   }
   @keyframes brillo {
     from { background-position: 200% 0; }
@@ -61,6 +67,10 @@
   html {
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+  section[id] {
+    scroll-margin-top: 80px;
   }
   body {
     @apply bg-tinta text-papel font-sans;
