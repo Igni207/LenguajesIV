@@ -300,6 +300,56 @@ app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+//Editar proyecto (Admin) (reemplaza los datos editables)
+app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const {errores, datos: d} = validarProyecto(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+
+    const r = await pool.query(
+      `UPDATE proyectos
+       SET titulo = $1, descripcion = $2, imagen_url = $3, demo_url = $4, repo_url = $5,
+           tipo = $6, autor = $7, tecnologias = $8, destacado = $9
+       WHERE id = $10 AND activo = true
+       RETURNING ${COLUMNAS_PROYECTO}`,
+      [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado, id]
+    );
+
+    if (r.rows.length === 0 ) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+
+    res.json(r.rows[0]);
+
+  } catch (error) {
+    console.error('Error al editar proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al editar el proyecto' });
+  }
+});
+
+// Dar de baja un proyecto (admin) (no se borra, se oculta)
+app.delete('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const r = await pool.query(
+      'UPDATE proyectos SET activo = false WHERE id = $1 AND activo = true RETURNING id',
+      [id]
+    );
+
+    if (r.rows.length === 0) return res.status(404).json({mensaje: 'Proyecto no encontrado'});
+
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al dar de baja el proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al dar de baja el proyecto' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`servidor corriendo en http://localhost:${PORT}`);

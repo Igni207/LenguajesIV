@@ -159,3 +159,56 @@ Content-Type: application/json
   "email": "Gonprueba0@mail.com",
   "password": "clave1234"
 }
+
+
+### Crear con token ADMIN -> 201 (PROYECTO DE PRUEBA QUE SE ELIMINA)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{
+  "titulo": "Proyecto Elimina",
+  "descripcion": "Proyecto que se editara y eliminara",
+  "tipo": "Fullstack",
+  "autor": "Rojo",
+  "tecnologias": "React, Node, PostgreSQL",
+  "repoUrl": "https://github.com/Igni207/LenguajesIV",
+  "destacado": false
+}
+
+
+### Editar -> 200
+PUT http://localhost:3000/api/projects/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Portfolio Fullstack v2", "tipo": "Fullstack", "autor": "Ultronzi", "destacado": false }
+
+### Editar con token NORMAL -> 403
+PUT http://localhost:3000/api/projects/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+{ "titulo": "Intento de edición" }
+
+### Editar con datos malos -> 400
+PUT http://localhost:3000/api/projects/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "x" }
+
+### Editar un id que no existe -> 404
+PUT http://localhost:3000/api/projects/9999
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "No existe" }
+
+### Dar de baja -> 204
+DELETE http://localhost:3000/api/projects/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Dar de baja otra vez -> 404
+DELETE http://localhost:3000/api/projects/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
