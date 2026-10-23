@@ -1,4 +1,4 @@
-// gonzi: te dejo el server levantado con express, despues conecta la bdd - fexx
+
 // fexx: GET /api/projects ya lee de la base (metrics y POST siguen de prueba). --gonzi
 require('dotenv').config();
 const express = require('express');
@@ -25,10 +25,6 @@ const datosOrigen = [
   { origen: 'Proyectos', cantidad: 18 },
   { origen: 'Demos', cantidad: 15 },
   { origen: 'Descarga CV', cantidad: 9 }
-];
-let proyectos = [
-  { id: 1, titulo: 'E-commerce React', tipo: 'Frontend', destacado: true, autor: 'Ssanty' },
-  { id: 2, titulo: 'API de Facturación', tipo: 'Backend', destacado: false, autor: 'Ultronzi' }
 ];
 
 // endpoints para el dashboard
@@ -60,6 +56,55 @@ function requireAdmin (req, res, next) {
     return res.status(403).json({ mensaje: 'No tenés permiso para hacer esto.' });
   }
   next();
+}
+
+// Columnas de un proyecto con los nombres que ve el frontend.
+// Es una constante nuestra: nunca se mete un dato del usuario dentro del SQL.
+const COLUMNAS_PROYECTO = `id, titulo, descripcion,
+  imagen_url AS "imagenUrl", demo_url AS "demoUrl", repo_url AS "repoUrl",
+  tipo, autor, tecnologias, destacado`;
+
+// Valida y limpia los datos de un proyecto (sirve para crear y para editar)
+function validarProyecto (body) {
+  const b = body || {};
+  const errores = {};
+  const texto = (v) => (typeof v === 'string' ? v.trim() : '');
+  const urlValida = (v) => {
+    try {
+      const u = new URL(v);
+      return (u.protocol === 'http:' || u.protocol === 'https:') && v.length <= 500;
+    } catch {
+      return false;
+    }
+  };
+
+  const titulo = texto(b.titulo);
+  if (titulo.length < 2 || titulo.length > 150) {
+    errores.titulo = 'El título debe tener entre 2 y 150 caracteres.';
+  }
+
+  const descripcion = texto(b.descripcion) || null;
+  if (descripcion && descripcion.length > 5000) errores.descripcion = 'La descripción es demasiado larga.';
+  const tipo = texto(b.tipo) || null;
+  if (tipo && tipo.length > 50) errores.tipo = 'El tipo es demasiado largo.';
+  const autor = texto(b.autor) || null;
+  if (autor && autor.length > 100) errores.autor = 'El autor es demasiado largo.';
+  const tecnologias = texto(b.tecnologias) || null;
+  if (tecnologias && tecnologias.length > 300) errores.tecnologias = 'Las tecnologías son demasiado largas.';
+
+  const imagenUrl = texto(b.imagenUrl) || null;
+  if (imagenUrl && !urlValida(imagenUrl)) errores.imagenUrl = 'Ingresá una URL válida (http o https).';
+  const demoUrl = texto(b.demoUrl) || null;
+  if (demoUrl && !urlValida(demoUrl)) errores.demoUrl = 'Ingresá una URL válida (http o https).';
+  const repoUrl = texto(b.repoUrl) || null;
+  if (repoUrl && !urlValida(repoUrl)) errores.repoUrl = 'Ingresá una URL válida (http o https).';
+
+  const destacado = b.destacado === true;
+
+  return {
+    errores,
+    datos: { titulo, descripcion, imagenUrl, demoUrl, repoUrl, tipo, autor, tecnologias, destacado }
+  };
 }
 
 app.get('/api/projects', async (req, res) => {
@@ -122,7 +167,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({
         mensaje: 'Revisá los datos',
-        errores: {email: 'Ese email ya está resgistrado'}
+        errores: {email: 'Ese email ya está registrado'}
       });
     }
     console.error('Error en el registro:', error.message);
@@ -193,8 +238,7 @@ app.get('/api/projects/:id', requireAuth, async (req, res) => {
       return res.status(400).json({ mensaje: 'Id inválido.' });
     }
     const r = await pool.query(
-      `SELECT id, titulo, descripcion, imagen_url, demo_url, repo_url,
-              tipo, autor, tecnologias, destacado
+      `SELECT ${COLUMNAS_PROYECTO}
        FROM proyectos
        WHERE id = $1 AND activo = true`,
       [id]
@@ -235,10 +279,25 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // santi: este endpoint recibe los proyectos nuevos desde el modal, aclaro por las ddas - fexx
-app.post('/api/projects', (req, res) => {
-  const nuevoProyecto = { id: Date.now(), ...req.body };
-  proyectos.push(nuevoProyecto);
-  res.status(201).json(nuevoProyecto);
+// Crear proyecto (admin)
+app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { errores, datos: d } = validarProyecto(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    const r = await pool.query(
+      `INSERT INTO proyectos
+         (titulo, descripcion, imagen_url, demo_url, repo_url, tipo, autor, tecnologias, destacado)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING ${COLUMNAS_PROYECTO}`,
+      [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado]
+    );
+    res.status(201).json(r.rows[0]);
+  } catch (error) {
+    console.error('Error al crear proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al crear el proyecto' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

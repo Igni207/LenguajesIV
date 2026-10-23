@@ -96,6 +96,7 @@ Authorization: Bearer abc.def.ghi
 ### me con token de admin -> 200
 GET http://localhost:3000/api/auth/me
 Authorization: Bearer PEGAR_TOKEN_ADMIN
+
 ### Detalle de proyecto SIN token -> 401
 GET http://localhost:3000/api/projects/1
 
@@ -110,3 +111,51 @@ Authorization: Bearer PEGAR_TOKEN_NORMAL
 ### Usuarios con token ADMIN -> 200
 GET http://localhost:3000/api/users
 Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+### Crear SIN token -> 401
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+
+{ "titulo": "Proyecto nuevo" }
+
+### Crear con token NORMAL -> 403
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+{ "titulo": "Proyecto nuevo" }
+
+### Crear con token ADMIN -> 201
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{
+  "titulo": "Portfolio Fullstack",
+  "descripcion": "Proyecto integrador",
+  "tipo": "Fullstack",
+  "autor": "Ultronzi",
+  "tecnologias": "React, Node, PostgreSQL",
+  "repoUrl": "https://github.com/Igni207/LenguajesIV",
+  "destacado": true
+}
+
+### Crear con datos malos -> 400 (con errores por campo)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "x", "demoUrl": "javascript:alert(1)" }
+
+
+### Registro de usuario de prueba
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "GonPrueba1",
+  "email": "Gonprueba0@mail.com",
+  "password": "clave1234"
+}
