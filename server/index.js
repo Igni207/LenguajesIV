@@ -1,4 +1,4 @@
-// gonzi: te dejo el server levantado con express, despues conecta la bdd - fexx
+
 // fexx: GET /api/projects ya lee de la base (metrics y POST siguen de prueba). --gonzi
 require('dotenv').config();
 const express = require('express');
@@ -6,6 +6,7 @@ const cors = require('cors');
 const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {enviarConsulta} = require('./mailer');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -25,10 +26,6 @@ const datosOrigen = [
   { origen: 'Proyectos', cantidad: 18 },
   { origen: 'Demos', cantidad: 15 },
   { origen: 'Descarga CV', cantidad: 9 }
-];
-let proyectos = [
-  { id: 1, titulo: 'E-commerce React', tipo: 'Frontend', destacado: true, autor: 'Ssanty' },
-  { id: 2, titulo: 'API de Facturación', tipo: 'Backend', destacado: false, autor: 'Ultronzi' }
 ];
 
 // endpoints para el dashboard
@@ -60,6 +57,55 @@ function requireAdmin (req, res, next) {
     return res.status(403).json({ mensaje: 'No tenés permiso para hacer esto.' });
   }
   next();
+}
+
+// Columnas de un proyecto con los nombres que ve el frontend.
+// Es una constante nuestra: nunca se mete un dato del usuario dentro del SQL.
+const COLUMNAS_PROYECTO = `id, titulo, descripcion,
+  imagen_url AS "imagenUrl", demo_url AS "demoUrl", repo_url AS "repoUrl",
+  tipo, autor, tecnologias, destacado`;
+
+// Valida y limpia los datos de un proyecto (sirve para crear y para editar)
+function validarProyecto (body) {
+  const b = body || {};
+  const errores = {};
+  const texto = (v) => (typeof v === 'string' ? v.trim() : '');
+  const urlValida = (v) => {
+    try {
+      const u = new URL(v);
+      return (u.protocol === 'http:' || u.protocol === 'https:') && v.length <= 500;
+    } catch {
+      return false;
+    }
+  };
+
+  const titulo = texto(b.titulo);
+  if (titulo.length < 2 || titulo.length > 150) {
+    errores.titulo = 'El título debe tener entre 2 y 150 caracteres.';
+  }
+
+  const descripcion = texto(b.descripcion) || null;
+  if (descripcion && descripcion.length > 5000) errores.descripcion = 'La descripción es demasiado larga.';
+  const tipo = texto(b.tipo) || null;
+  if (tipo && tipo.length > 50) errores.tipo = 'El tipo es demasiado largo.';
+  const autor = texto(b.autor) || null;
+  if (autor && autor.length > 100) errores.autor = 'El autor es demasiado largo.';
+  const tecnologias = texto(b.tecnologias) || null;
+  if (tecnologias && tecnologias.length > 300) errores.tecnologias = 'Las tecnologías son demasiado largas.';
+
+  const imagenUrl = texto(b.imagenUrl) || null;
+  if (imagenUrl && !urlValida(imagenUrl)) errores.imagenUrl = 'Ingresá una URL válida (http o https).';
+  const demoUrl = texto(b.demoUrl) || null;
+  if (demoUrl && !urlValida(demoUrl)) errores.demoUrl = 'Ingresá una URL válida (http o https).';
+  const repoUrl = texto(b.repoUrl) || null;
+  if (repoUrl && !urlValida(repoUrl)) errores.repoUrl = 'Ingresá una URL válida (http o https).';
+
+  const destacado = b.destacado === true;
+
+  return {
+    errores,
+    datos: { titulo, descripcion, imagenUrl, demoUrl, repoUrl, tipo, autor, tecnologias, destacado }
+  };
 }
 
 app.get('/api/projects', async (req, res) => {
@@ -122,7 +168,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({
         mensaje: 'Revisá los datos',
-        errores: {email: 'Ese email ya está resgistrado'}
+        errores: {email: 'Ese email ya está registrado'}
       });
     }
     console.error('Error en el registro:', error.message);
@@ -193,8 +239,7 @@ app.get('/api/projects/:id', requireAuth, async (req, res) => {
       return res.status(400).json({ mensaje: 'Id inválido.' });
     }
     const r = await pool.query(
-      `SELECT id, titulo, descripcion, imagen_url, demo_url, repo_url,
-              tipo, autor, tecnologias, destacado
+      `SELECT ${COLUMNAS_PROYECTO}
        FROM proyectos
        WHERE id = $1 AND activo = true`,
       [id]
@@ -235,10 +280,126 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // santi: este endpoint recibe los proyectos nuevos desde el modal, aclaro por las ddas - fexx
-app.post('/api/projects', (req, res) => {
-  const nuevoProyecto = { id: Date.now(), ...req.body };
-  proyectos.push(nuevoProyecto);
-  res.status(201).json(nuevoProyecto);
+// Crear proyecto (admin)
+app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { errores, datos: d } = validarProyecto(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    const r = await pool.query(
+      `INSERT INTO proyectos
+         (titulo, descripcion, imagen_url, demo_url, repo_url, tipo, autor, tecnologias, destacado)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING ${COLUMNAS_PROYECTO}`,
+      [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado]
+    );
+    res.status(201).json(r.rows[0]);
+  } catch (error) {
+    console.error('Error al crear proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al crear el proyecto' });
+  }
+});
+
+//Editar proyecto (Admin) (reemplaza los datos editables)
+app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const {errores, datos: d} = validarProyecto(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+
+    const r = await pool.query(
+      `UPDATE proyectos
+       SET titulo = $1, descripcion = $2, imagen_url = $3, demo_url = $4, repo_url = $5,
+           tipo = $6, autor = $7, tecnologias = $8, destacado = $9
+       WHERE id = $10 AND activo = true
+       RETURNING ${COLUMNAS_PROYECTO}`,
+      [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado, id]
+    );
+
+    if (r.rows.length === 0 ) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+
+    res.json(r.rows[0]);
+
+  } catch (error) {
+    console.error('Error al editar proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al editar el proyecto' });
+  }
+});
+
+// Dar de baja un proyecto (admin) (no se borra, se oculta)
+app.delete('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const r = await pool.query(
+      'UPDATE proyectos SET activo = false WHERE id = $1 AND activo = true RETURNING id',
+      [id]
+    );
+
+    if (r.rows.length === 0) return res.status(404).json({mensaje: 'Proyecto no encontrado'});
+
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al dar de baja el proyecto:', error.message);
+    res.status(500).json({ mensaje: 'Error al dar de baja el proyecto' });
+  }
+});
+
+// Contacto: guarda la consulta (público)
+app.post('/api/contact', async (req, res) => {
+  try {
+    const {nombre, email, tipo, mensaje} = req.body || {};
+
+    const nombreLimpio = typeof nombre === 'string' ? nombre.trim() : '';
+    const emailLimpio = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const mensajeLimpio = typeof mensaje === 'string' ? mensaje.trim() : '';
+    const tipoFinal = tipo === undefined ? 'general' : tipo;
+
+    const errores = {};
+    if (nombreLimpio.length < 2 || nombreLimpio.length > 100) {
+      errores.nombre = 'Ingresá tu nombre (entre 2 y 100 caracteres).';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailLimpio) || emailLimpio.length > 150) {
+      errores.email = 'Revisá el formato del email.';
+    }
+    if (mensajeLimpio.length < 10 || mensajeLimpio.length > 1000) {
+      errores.mensaje = 'El mensaje debe tener entre 10 y 1000 caracteres.';
+    }
+    if (!['general', 'cotizacion', 'asesoria'].includes(tipoFinal)) {
+      errores.tipo = 'Tipo de consulta no válido.';
+    }
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+
+    await pool.query(
+      `INSERT INTO consultas (nombre, email, tipo, mensaje)
+       VALUES ($1, $2, $3, $4)`,
+      [nombreLimpio, emailLimpio, tipoFinal, mensajeLimpio]
+    );
+
+    try {
+      await enviarConsulta({
+        nombre: nombreLimpio,
+        email: emailLimpio,
+        tipo: tipoFinal,
+        mensaje: mensajeLimpio
+      });
+    } catch (err) {
+      console.error('No se pudo enviar el email:', err.message);
+    }
+
+    res.status(201).json({ mensaje: 'Consulta recibida' });
+  } catch (error) {
+    console.error('Error al guardar la consulta:', error.message);
+    res.status(500).json({ mensaje: 'Error al enviar la consulta' });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

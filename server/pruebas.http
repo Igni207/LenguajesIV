@@ -96,6 +96,7 @@ Authorization: Bearer abc.def.ghi
 ### me con token de admin -> 200
 GET http://localhost:3000/api/auth/me
 Authorization: Bearer PEGAR_TOKEN_ADMIN
+
 ### Detalle de proyecto SIN token -> 401
 GET http://localhost:3000/api/projects/1
 
@@ -110,3 +111,136 @@ Authorization: Bearer PEGAR_TOKEN_NORMAL
 ### Usuarios con token ADMIN -> 200
 GET http://localhost:3000/api/users
 Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+### Crear SIN token -> 401
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+
+{ "titulo": "Proyecto nuevo" }
+
+### Crear con token NORMAL -> 403
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+{ "titulo": "Proyecto nuevo" }
+
+### Crear con token ADMIN -> 201
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{
+  "titulo": "Portfolio Fullstack",
+  "descripcion": "Proyecto integrador",
+  "tipo": "Fullstack",
+  "autor": "Ultronzi",
+  "tecnologias": "React, Node, PostgreSQL",
+  "repoUrl": "https://github.com/Igni207/LenguajesIV",
+  "destacado": true
+}
+
+### Crear con datos malos -> 400 (con errores por campo)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "x", "demoUrl": "javascript:alert(1)" }
+
+
+### Registro de usuario de prueba
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "GonPrueba1",
+  "email": "Gonprueba0@mail.com",
+  "password": "clave1234"
+}
+
+
+### Crear con token ADMIN -> 201 (PROYECTO DE PRUEBA QUE SE ELIMINA)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{
+  "titulo": "Proyecto Elimina",
+  "descripcion": "Proyecto que se editara y eliminara",
+  "tipo": "Fullstack",
+  "autor": "Rojo",
+  "tecnologias": "React, Node, PostgreSQL",
+  "repoUrl": "https://github.com/Igni207/LenguajesIV",
+  "destacado": false
+}
+
+
+### Editar -> 200
+PUT http://localhost:3000/api/projects/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Portfolio Fullstack v2", "tipo": "Fullstack", "autor": "Ultronzi", "destacado": false }
+
+### Editar con token NORMAL -> 403
+PUT http://localhost:3000/api/projects/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+{ "titulo": "Intento de edición" }
+
+### Editar con datos malos -> 400
+PUT http://localhost:3000/api/projects/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "x" }
+
+### Editar un id que no existe -> 404
+PUT http://localhost:3000/api/projects/9999
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "No existe" }
+
+### Dar de baja -> 204
+DELETE http://localhost:3000/api/projects/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Dar de baja otra vez -> 404
+DELETE http://localhost:3000/api/projects/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+
+### Contacto correcto -> 201
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{
+  "nombre": "Cliente Prueba",
+  "email": "cliente@mail.com",
+  "tipo": "cotizacion",
+  "mensaje": "Quisiera cotizar una página web para mi negocio."
+}
+
+### Contacto vacío -> 400
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{}
+
+### Mensaje corto -> 400
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{ "nombre": "Ana", "email": "ana@mail.com", "mensaje": "hola" }
+
+### Tipo inválido -> 400
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{ "nombre": "Ana", "email": "ana@mail.com", "tipo": "otro", "mensaje": "Un mensaje de prueba largo." }
