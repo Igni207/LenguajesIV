@@ -6,6 +6,7 @@ const cors = require('cors');
 const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {enviarConsulta} = require('./mailer');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -347,6 +348,57 @@ app.delete('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error al dar de baja el proyecto:', error.message);
     res.status(500).json({ mensaje: 'Error al dar de baja el proyecto' });
+  }
+});
+
+// Contacto: guarda la consulta (público)
+app.post('/api/contact', async (req, res) => {
+  try {
+    const {nombre, email, tipo, mensaje} = req.body || {};
+
+    const nombreLimpio = typeof nombre === 'string' ? nombre.trim() : '';
+    const emailLimpio = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const mensajeLimpio = typeof mensaje === 'string' ? mensaje.trim() : '';
+    const tipoFinal = tipo === undefined ? 'general' : tipo;
+
+    const errores = {};
+    if (nombreLimpio.length < 2 || nombreLimpio.length > 100) {
+      errores.nombre = 'Ingresá tu nombre (entre 2 y 100 caracteres).';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailLimpio) || emailLimpio.length > 150) {
+      errores.email = 'Revisá el formato del email.';
+    }
+    if (mensajeLimpio.length < 10 || mensajeLimpio.length > 1000) {
+      errores.mensaje = 'El mensaje debe tener entre 10 y 1000 caracteres.';
+    }
+    if (!['general', 'cotizacion', 'asesoria'].includes(tipoFinal)) {
+      errores.tipo = 'Tipo de consulta no válido.';
+    }
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+
+    await pool.query(
+      `INSERT INTO consultas (nombre, email, tipo, mensaje)
+       VALUES ($1, $2, $3, $4)`,
+      [nombreLimpio, emailLimpio, tipoFinal, mensajeLimpio]
+    );
+
+    try {
+      await enviarConsulta({
+        nombre: nombreLimpio,
+        email: emailLimpio,
+        tipo: tipoFinal,
+        mensaje: mensajeLimpio
+      });
+    } catch (err) {
+      console.error('No se pudo enviar el email:', err.message);
+    }
+
+    res.status(201).json({ mensaje: 'Consulta recibida' });
+  } catch (error) {
+    console.error('Error al guardar la consulta:', error.message);
+    res.status(500).json({ mensaje: 'Error al enviar la consulta' });
   }
 });
 

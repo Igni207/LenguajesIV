@@ -212,3 +212,35 @@ Authorization: Bearer PEGAR_TOKEN_ADMIN
 ### Dar de baja otra vez -> 404
 DELETE http://localhost:3000/api/projects/5
 Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+
+### Contacto correcto -> 201
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{
+  "nombre": "Cliente Prueba",
+  "email": "cliente@mail.com",
+  "tipo": "cotizacion",
+  "mensaje": "Quisiera cotizar una página web para mi negocio."
+}
+
+### Contacto vacío -> 400
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{}
+
+### Mensaje corto -> 400
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{ "nombre": "Ana", "email": "ana@mail.com", "mensaje": "hola" }
+
+### Tipo inválido -> 400
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{ "nombre": "Ana", "email": "ana@mail.com", "tipo": "otro", "mensaje": "Un mensaje de prueba largo." }
