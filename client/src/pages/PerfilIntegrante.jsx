@@ -2,11 +2,17 @@ import { useParams } from 'react-router-dom'
 import { integrantes } from '../data/integrantes'
 import { PerfilBaseDeDatos } from '../components/perfiles/PerfilBaseDeDatos'
 import { PerfilSimple } from '../components/perfiles/PerfilSimple'
+import { PerfilAnalytics } from '../components/perfiles/PerfilAnalytics'
+import { PerfilComponentes } from '../components/perfiles/PerfilComponentes'
+import { PerfilDiseno } from '../components/perfiles/PerfilDiseno'
 import NoEncontrada from './NoEncontrada'
 
 // /equipo/:slug — cada integrante puede tener su propio tema de página - Rojo
 const temas = {
   'base-de-datos': PerfilBaseDeDatos,
+  analytics: PerfilAnalytics,
+  componentes: PerfilComponentes,
+  diseno: PerfilDiseno,
 }
 
 export default function PerfilIntegrante() {

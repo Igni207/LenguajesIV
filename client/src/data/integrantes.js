@@ -21,7 +21,39 @@ export const integrantes = [
       telefono: '+54 9 387 586-6708',
       whatsapp: '5493875866708',
     },
+    tema: 'analytics',
     cv: {
+      titulo: 'Desarrollador fullstack',
+      sobreMi:
+        'Estudiante de la Universidad Católica de Salta desde 2024. Formé parte del equipo de Gonzi The Orc Slayer, un juego 2D, y hoy me ocupo del panel de administración y las métricas de este portfolio. Me gusta que los datos se entiendan de un vistazo y que todo llegue andando a producción.',
+      experiencia: [
+        {
+          desde: 'Octubre de 2026',
+          hasta: 'Actualidad',
+          puesto: 'Fullstack y analytics',
+          lugar: 'Portfolio del equipo · Lenguajes IV, UCASAL',
+          descripcion: 'Panel de administración con métricas y gráficos interactivos, gestión de proyectos y consultas, y despliegue del sitio en Vercel. Es esta misma web.',
+        },
+        {
+          desde: '2024',
+          hasta: 'Inicios de 2025',
+          puesto: 'Desarrollo del videojuego',
+          lugar: 'Gonzi The Orc Slayer · videojuego 2D',
+          descripcion: 'Parte del equipo que desarrolló Gonzi The Orc Slayer, un juego 2D. Texto de ejemplo para contar qué parte del juego hiciste.',
+        },
+      ],
+      habilidades: [
+        { nombre: 'React', nivel: 75 },
+        { nombre: 'Recharts', nivel: 80 },
+        { nombre: 'Node.js + Express', nivel: 65 },
+        { nombre: 'SQL', nivel: 60 },
+        { nombre: 'Vercel y deploy', nivel: 75 },
+        { nombre: 'Git', nivel: 75 },
+      ],
+      idiomas: [
+        { nombre: 'Español', nivel: 'Nativo' },
+        { nombre: 'Inglés', nivel: 'Intermedio' },
+      ],
       educacion: [
         {
           desde: '2024',
@@ -65,7 +97,39 @@ export const integrantes = [
       telefono: '+54 9 387 449-7921',
       whatsapp: '5493874497921',
     },
+    tema: 'componentes',
     cv: {
+      titulo: 'Desarrollador frontend',
+      sobreMi:
+        'Estudiante de la Universidad Católica de Salta desde 2024. Formé parte del equipo de Gonzi The Orc Slayer, un juego 2D, y hoy llevo el frontend de este portfolio. Me gusta armar interfaces en React que se entiendan solas y separar todo en componentes fáciles de reutilizar.',
+      experiencia: [
+        {
+          desde: 'Octubre de 2026',
+          hasta: 'Actualidad',
+          puesto: 'Lead frontend',
+          lugar: 'Portfolio del equipo · Lenguajes IV, UCASAL',
+          descripcion: 'Estructura del frontend en React con Vite, rutas con React Router, rutas protegidas, manejo de sesión con Context y validación de formularios. Es esta misma web.',
+        },
+        {
+          desde: '2024',
+          hasta: 'Inicios de 2025',
+          puesto: 'Desarrollo del videojuego',
+          lugar: 'Gonzi The Orc Slayer · videojuego 2D',
+          descripcion: 'Parte del equipo que desarrolló Gonzi The Orc Slayer, un juego 2D. Texto de ejemplo para contar qué parte del juego hiciste.',
+        },
+      ],
+      habilidades: [
+        { nombre: 'React', nivel: 80 },
+        { nombre: 'React Router', nivel: 80 },
+        { nombre: 'JavaScript', nivel: 75 },
+        { nombre: 'Vite', nivel: 70 },
+        { nombre: 'Tailwind CSS', nivel: 65 },
+        { nombre: 'Git', nivel: 75 },
+      ],
+      idiomas: [
+        { nombre: 'Español', nivel: 'Nativo' },
+        { nombre: 'Inglés', nivel: 'Intermedio' },
+      ],
       educacion: [
         {
           desde: '2024',
@@ -118,7 +182,7 @@ export const integrantes = [
         'Estudiante de la Universidad Católica de Salta desde 2024 y nuevo en el mundo del desarrollo. Empecé programando el movimiento y la recolección de ítems de Gonzi The Orc Slayer, un juego 2D, después trabajé con bases de datos en Numerika AI y hoy llevo el backend de este portfolio. Disfruto pensar cómo se relacionan las tablas y construir APIs ordenadas, seguras y fáciles de mantener.',
       experiencia: [
         {
-          desde: '2026',
+          desde: 'Octubre de 2026',
           hasta: 'Actualidad',
           puesto: 'Tech Lead y backend',
           lugar: 'Portfolio del equipo · Lenguajes IV, UCASAL',
@@ -194,7 +258,67 @@ export const integrantes = [
       telefono: '+54 9 387 567-5809',
       whatsapp: '5493875675809',
     },
+    tema: 'diseno',
     cv: {
+      titulo: 'Diseñador UI/UX y animación',
+      sobreMi:
+        'Estudiante de la Universidad Católica de Salta desde 2024. Empecé haciendo la interfaz de Gonzi The Orc Slayer, después hice su secuela completa, Gonzi The Orc Slayer: Luna Llena, e invitaciones web para eventos. Hice la página del torneo BFC, trabajo en el asistente Aura Ekiz y diseño la identidad de este portfolio. Me gusta que las interfaces se sientan vivas sin cansar la vista y que cada movimiento tenga un motivo.',
+      experiencia: [
+        {
+          desde: 'Octubre de 2026',
+          hasta: 'Actualidad',
+          puesto: 'UI/UX y animación',
+          lugar: 'Portfolio del equipo · Lenguajes IV, UCASAL',
+          descripcion: 'Manual de marca, sistema de diseño en Tailwind, componentes base, maquetación responsive y animaciones con GSAP. Es esta misma web.',
+        },
+        {
+          desde: 'Inicios de 2026',
+          hasta: 'Actualidad',
+          puesto: 'Diseño y desarrollo web',
+          lugar: 'BFC · página de un torneo',
+          descripcion: 'Hice la página del torneo de punta a punta: identidad, estructura de las secciones, interfaz y desarrollo.',
+        },
+        {
+          desde: 'Fines de 2025',
+          hasta: 'Actualidad',
+          puesto: 'Diseño, 3D y animación',
+          lugar: 'Aura Ekiz · asistente IA para Windows',
+          descripcion: 'Asistente con IA integrado a Windows, con total libertad creativa. Me encargo del diseño de la interfaz, el modelado 3D y las animaciones.',
+        },
+        {
+          desde: '2025',
+          hasta: '2025',
+          puesto: 'Diseño y desarrollo web',
+          lugar: 'Invitaciones web · eventos',
+          descripcion: 'Invitaciones web para eventos como bodas, pensadas para verse bien en el celular y con animaciones suaves.',
+        },
+        {
+          desde: '2025',
+          hasta: '2025',
+          puesto: 'Desarrollo completo del juego',
+          lugar: 'Gonzi The Orc Slayer: Luna Llena · secuela',
+          descripcion: 'Hice la secuela de Gonzi The Orc Slayer completa: programación, interfaz, menús y todo el apartado visual.',
+        },
+        {
+          desde: '2024',
+          hasta: 'Inicios de 2025',
+          puesto: 'Interfaz y apartado visual',
+          lugar: 'Gonzi The Orc Slayer · videojuego 2D',
+          descripcion: 'Arranqué con la interfaz del personaje, los menús y todo lo visual del juego.',
+        },
+      ],
+      habilidades: [
+        { nombre: 'Diseño UI/UX', nivel: 85 },
+        { nombre: 'GSAP', nivel: 80 },
+        { nombre: 'Tailwind CSS', nivel: 85 },
+        { nombre: 'React', nivel: 70 },
+        { nombre: 'Figma', nivel: 75 },
+        { nombre: 'Animación web', nivel: 80 },
+      ],
+      idiomas: [
+        { nombre: 'Español', nivel: 'Nativo' },
+        { nombre: 'Inglés', nivel: 'Intermedio' },
+      ],
       educacion: [
         {
           desde: '2024',
