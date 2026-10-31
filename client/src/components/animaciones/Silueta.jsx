@@ -1,14 +1,16 @@
-// cuando tengamos las fotos recortadas van en public/fotos y se cambia foto en integrantes.js - Rojo
+// las fotos recortadas están en public/fotos, ocupan todo el alto y el ancho sale solo - Rojo
 
 export function Silueta({ integrante, className = '' }) {
   if (integrante.foto) {
     return (
-      <img
-        src={integrante.foto}
-        alt={`Foto de ${integrante.nombre}`}
-        className={`h-full w-full object-contain object-bottom ${className}`}
-        draggable="false"
-      />
+      <div className={`relative h-full w-full ${className}`}>
+        <img
+          src={integrante.foto}
+          alt={`Foto de ${integrante.nombre}`}
+          className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 select-none"
+          draggable="false"
+        />
+      </div>
     )
   }
 

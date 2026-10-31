@@ -2,8 +2,10 @@ import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAparecer } from '../../hooks/useAparecer'
-import { Boton, Chip, Esqueleto, IconoCandado, Modal, useToast } from '../ui'
+import { Boton, Chip, Esqueleto, IconoCandado, Modal } from '../ui'
 import { integrantes } from '../../data/integrantes'
+import { docDe, mezclarConDocs, proyectosDoc } from '../../data/documentacion'
+import { DemoModal, Portada } from '../proyectos/Documentacion'
 import { Encabezado } from './Encabezado'
 
 // el autor de la base puede venir con apodo o nombre: lo pasamos al integrante para mostrar su nombre y color - Rojo
@@ -18,21 +20,26 @@ export function Proyectos({ proyectos, cargando, error, reintentar }) {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const { mostrar } = useToast()
   const [filtro, setFiltro] = useState('Todos')
   const [modal, setModal] = useState(false)
   useAparecer(raiz)
 
-  const lista = proyectos ?? []
+  // los documentados se suman aunque no estén en la base - Rojo
+  const lista = mezclarConDocs(proyectos ?? [], integrantes.flatMap(proyectosDoc))
+  const [demo, setDemo] = useState(null)
   const destacados = lista.filter((p) => p.destacado).slice(0, 3)
   const ocultos = lista.length - destacados.length
   const tipos = ['Todos', ...new Set(lista.map((p) => p.tipo).filter(Boolean))]
   const visibles = isAuthenticated ? lista.filter((p) => filtro === 'Todos' || p.tipo === filtro) : destacados
 
-  const verDetalle = () => {
+  // los documentados se abren en el perfil del autor, el resto en /proyectos/:id
+  const verDetalle = (p) => {
     if (!isAuthenticated) return setModal(true)
-    mostrar({ tipo: 'info', titulo: 'Próximamente', mensaje: 'El detalle de cada proyecto está en camino.' })
+    const doc = docDe(p)
+    const autor = porAutor[(p.autor ?? '').toLowerCase()]
+    navigate(doc && autor ? `/equipo/${autor.slug}#p-${doc.slug}` : doc ? `/proyectos/${doc.slug}` : `/proyectos/${p.id}`)
   }
+  const probar = (doc) => (isAuthenticated ? setDemo(doc) : setModal(true))
 
   const irALogin = () => {
     setModal(false)
@@ -82,15 +89,17 @@ export function Proyectos({ proyectos, cargando, error, reintentar }) {
             </div>
           ))}
         </div>
-      ) : error ? (
-        <div className="flex flex-col items-start gap-4 rounded-3xl bg-grafito p-8">
-          <p className="m-0 text-niebla">No pudimos cargar los proyectos.</p>
-          <Boton variante="secundario" onClick={reintentar}>Reintentar</Boton>
-        </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Gonzi: si la API falla igual se ven los documentados, y avisamos que faltan los de la base - Rojo */}
+          {error && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-pizarra px-5 py-4 sm:col-span-2 lg:col-span-3">
+              <p className="m-0 text-sm text-niebla">No pudimos cargar todos los proyectos de la base.</p>
+              <Boton variante="secundario" onClick={reintentar}>Reintentar</Boton>
+            </div>
+          )}
           {visibles.map((p) => (
-            <TarjetaProyecto key={p.id} proyecto={p} onDetalle={verDetalle} />
+            <TarjetaProyecto key={p.id} proyecto={p} onDetalle={() => verDetalle(p)} onProbar={probar} />
           ))}
 
           {!isAuthenticated && ocultos > 0 && (
@@ -116,6 +125,8 @@ export function Proyectos({ proyectos, cargando, error, reintentar }) {
         </div>
       )}
 
+      {demo && <DemoModal doc={demo} onCerrar={() => setDemo(null)} />}
+
       <Modal
         abierto={modal}
         onCerrar={() => setModal(false)}
@@ -138,13 +149,15 @@ export function Proyectos({ proyectos, cargando, error, reintentar }) {
   )
 }
 
-function TarjetaProyecto({ proyecto, onDetalle }) {
+function TarjetaProyecto({ proyecto, onDetalle, onProbar }) {
   const autor = porAutor[(proyecto.autor ?? '').toLowerCase()]
   const color = autor?.claro ?? '#7C9CE4'
+  const doc = docDe(proyecto)
   return (
     <div data-aparecer className="flex">
       <article className="group flex w-full flex-col overflow-hidden rounded-3xl bg-grafito transition-transform duration-300 ease-salida hover:-translate-y-1.5">
         <div aria-hidden="true" className="relative h-36 overflow-hidden" style={{ background: `${color}33` }}>
+          {doc && <Portada doc={doc} className="absolute inset-0 z-[1] transition-transform duration-500 ease-salida group-hover:scale-105" />}
           <div className="absolute left-5 right-[40%] top-6 flex flex-col gap-2.5">
             <span className="h-1.5 w-4/5 rounded-full bg-papel/20" />
             <span className="h-1.5 w-1/2 rounded-full" style={{ background: color }} />
@@ -155,7 +168,7 @@ function TarjetaProyecto({ proyecto, onDetalle }) {
             style={{ background: color }}
           />
           {proyecto.destacado && (
-            <span className="absolute bottom-3 left-4 rounded-full bg-tinta px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider" style={{ color }}>
+            <span className="absolute bottom-3 left-4 z-[2] rounded-full bg-tinta px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider" style={{ color }}>
               Destacado
             </span>
           )}
@@ -168,7 +181,10 @@ function TarjetaProyecto({ proyecto, onDetalle }) {
             {proyecto.autor && <Chip>{autor?.nombreCorto ?? proyecto.autor}</Chip>}
           </div>
           <div className="mt-auto pt-2">
-            <Boton variante="secundario" onClick={onDetalle}>Ver detalle</Boton>
+            <div className="flex flex-wrap gap-2.5">
+              <Boton variante="secundario" onClick={onDetalle}>Ver detalle</Boton>
+              {doc?.demo && <Boton color={autor?.clase ?? 'fexx'} onClick={() => onProbar(doc)}>▶ Probar</Boton>}
+            </div>
           </div>
         </div>
       </article>

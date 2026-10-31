@@ -8,6 +8,7 @@ import PerfilIntegrante from './pages/PerfilIntegrante';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import LoginModal from './components/LoginModal';
+import ProyectoDetalle from './pages/ProyectoDetalle';
 
 export default function App() {
   return (
@@ -30,6 +31,16 @@ export default function App() {
                 <Admin />
               </ProtectedRoute>
             } 
+          />
+
+          {/* Santy: el detalle de proyecto pide sesión, como dice la consigna - Rojo */}
+          <Route
+            path="/proyectos/:clave"
+            element={
+              <ProtectedRoute>
+                <ProyectoDetalle />
+              </ProtectedRoute>
+            }
           />
 
           {/* Perfil de usuario */}

@@ -139,7 +139,7 @@ export function HeroIntegrantes({ intervalo = 5 }) {
           key={m.id}
           ref={(el) => (fotos.current[i] = el)}
           aria-hidden={i !== indice}
-          className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-[62%] w-[min(380px,72vw)] sm:h-[74%]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-[54%] w-[min(380px,72vw)] sm:h-[68%]"
         >
           <Silueta integrante={m} />
         </div>

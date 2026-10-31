@@ -231,7 +231,7 @@ export function PerfilAnalytics({ integrante }) {
                   </div>
                   {p.tipo && <Chip>{p.tipo}</Chip>}
                   {p.destacado && <Chip tono="info">Destacado</Chip>}
-                  <Boton variante="secundario" onClick={perfil.verDetalle}>Ver detalle</Boton>
+                  <Boton variante="secundario" onClick={() => perfil.verDetalle(p)}>Ver detalle</Boton>
                 </div>
               ))}
               {perfil.proyOcultos > 0 && <Bloqueado texto={`${perfil.proyOcultos} ${perfil.proyOcultos === 1 ? 'proyecto más' : 'proyectos más'}`} onClick={perfil.pedirSesion} />}
