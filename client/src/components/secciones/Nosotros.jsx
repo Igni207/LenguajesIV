@@ -54,6 +54,7 @@ export function Nosotros({ cantidadProyectos }) {
         {contadores.map((c) => (
           <div key={c.texto} className="flex flex-col gap-1.5 rounded-2xl bg-grafito p-5 sm:p-6">
             <span
+              key={c.valor ?? 'nada'}
               data-contador={c.valor ?? ''}
               className={`font-display text-[clamp(32px,4vw,44px)] font-bold ${c.color}`}
             >

@@ -11,6 +11,7 @@ import { Silueta } from '../animaciones/Silueta'
 import { Boton, IconoCandado } from '../ui'
 import { IconoContacto } from './Contacto'
 import { ModalMiembros, anio, periodo, usePerfil } from './comun'
+import { ListaProyectos } from '../proyectos/ListaProyectos'
 
 gsap.registerPlugin(useGSAP, ScrollTrigger)
 
@@ -274,21 +275,8 @@ export function PerfilDiseno({ integrante }) {
             ) : perfil.proyectos.length === 0 ? (
               <p className="m-0 text-niebla">Todavía no hay proyectos cargados.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {perfil.proyVisibles.map((p) => (
-                  <article key={p.id} className="group flex flex-col gap-3">
-                    <span className="font-mono text-xs text-niebla">{p.titulo} — 1440 × 900</span>
-                    <div className="relative h-40 overflow-hidden rounded-xl border transition-colors group-hover:border-[#EE8E80]" style={{ background: C.fondo, borderColor: C.linea }}>
-                      <span className="absolute left-5 top-5 h-2 w-2/3 rounded-full" style={{ background: `${C.claro}aa` }} />
-                      <span className="absolute left-5 top-10 h-2 w-1/2 rounded-full bg-papel/15" />
-                      <span className="absolute -bottom-6 right-6 h-28 w-28 rotate-6 rounded-2xl transition-transform duration-500 group-hover:rotate-0" style={{ background: C.claro }} />
-                    </div>
-                    {p.descripcion && <span className="text-sm text-niebla">{p.descripcion}</span>}
-                    <div>
-                      <Boton variante="secundario" onClick={perfil.verDetalle}>Ver detalle</Boton>
-                    </div>
-                  </article>
-                ))}
+              <div className="flex flex-col gap-4">
+                <ListaProyectos perfil={perfil} color={C.claro} />
                 {perfil.proyOcultos > 0 && <Bloqueado texto={`${perfil.proyOcultos} ${perfil.proyOcultos === 1 ? 'proyecto más' : 'proyectos más'}`} onClick={perfil.pedirSesion} />}
               </div>
             )}

@@ -35,14 +35,15 @@ export function usePerfil(integrante) {
       setModal(false)
       navigate('/login', { state: { from: location } })
     },
-    descargarCv: () =>
-      isAuthenticated
-        ? mostrar({ tipo: 'info', titulo: 'CV en camino', mensaje: 'El PDF todavía no está cargado.' })
-        : setModal(true),
-    verDetalle: () =>
-      isAuthenticated
-        ? mostrar({ tipo: 'info', titulo: 'Próximamente', mensaje: 'El detalle de cada proyecto está en camino.' })
-        : setModal(true),
+    descargarCv: () => {
+      if (!isAuthenticated) return setModal(true)
+      if (!integrante.cvPdf) return mostrar({ tipo: 'info', titulo: 'CV en camino', mensaje: 'El PDF todavía no está cargado.' })
+      const a = document.createElement('a')
+      a.href = integrante.cvPdf
+      a.download = `CV - ${integrante.nombre}.pdf`
+      a.click()
+    },
+    verDetalle: (p) => (isAuthenticated ? navigate(`/proyectos/${p.id}`) : setModal(true)),
   }
 }
 

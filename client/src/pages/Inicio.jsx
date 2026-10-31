@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../data/api'
+import { integrantes } from '../data/integrantes'
+import { mezclarConDocs, proyectosDoc } from '../data/documentacion'
 import { HeroIntegrantes } from '../components/animaciones/HeroIntegrantes'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
@@ -34,6 +36,9 @@ export default function Inicio() {
     return () => clearTimeout(t)
   }, [])
 
+  // cuenta los de la base más los documentados (sin repetir) - Rojo
+  const cantidadProyectos = mezclarConDocs(proyectos ?? [], integrantes.flatMap(proyectosDoc)).length
+
   const reintentar = () => {
     setCargando(true)
     setError(false)
@@ -47,7 +52,7 @@ export default function Inicio() {
         <HeroIntegrantes />
       </div>
       <main className="mx-auto flex max-w-7xl flex-col gap-32 overflow-x-clip px-4 py-28 sm:gap-40 sm:px-8 lg:px-12">
-        <Nosotros cantidadProyectos={proyectos?.length} />
+        <Nosotros cantidadProyectos={cantidadProyectos} />
         <Equipo />
         <Servicios />
       </main>

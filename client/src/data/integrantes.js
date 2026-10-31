@@ -14,7 +14,7 @@ export const integrantes = [
     profundo: '#2C3E66',
     bio: 'Me gusta convertir datos en paneles claros y fáciles de leer. En el equipo me ocupo del panel de administración, las métricas y que todo llegue andando a producción.',
     chips: ['Dashboards', 'Chart.js', 'CI/CD'],
-    foto: null,
+    foto: '/fotos/ezequiel-silvera.webp',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'ezequiel.silvera.sandoval@gmail.com',
@@ -25,21 +25,35 @@ export const integrantes = [
     cv: {
       titulo: 'Desarrollador fullstack',
       sobreMi:
-        'Estudiante de la Universidad Católica de Salta desde 2024. Formé parte del equipo de Gonzi The Orc Slayer, un juego 2D, y hoy me ocupo del panel de administración y las métricas de este portfolio. Me gusta que los datos se entiendan de un vistazo y que todo llegue andando a producción.',
+        'Estudiante de la Universidad Católica de Salta desde 2024. Hice las físicas y colisiones de Gonzi The Orc Slayer, trabajé en Numérika AI y hoy desarrollo una plataforma de gestión financiera y el panel de administración de este portfolio. Me gusta que los datos se entiendan de un vistazo y que todo llegue andando a producción.',
       experiencia: [
         {
           desde: 'Octubre de 2026',
           hasta: 'Actualidad',
           puesto: 'Fullstack y analytics',
           lugar: 'Portfolio del equipo · Lenguajes IV, UCASAL',
-          descripcion: 'Panel de administración con métricas y gráficos interactivos, gestión de proyectos y consultas, y despliegue del sitio en Vercel. Es esta misma web.',
+          descripcion: 'Desarrollo del panel de administración con métricas interactivas en Recharts, maquetado de componentes en React y Tailwind CSS, y diseño de la API mock en Express. Es esta misma web.',
+        },
+        {
+          desde: 'Septiembre de 2026',
+          hasta: 'Actualidad',
+          puesto: 'Desarrollador fullstack',
+          lugar: 'Plataforma de gestión financiera',
+          descripcion: 'Creador y desarrollador de un ecosistema de aplicaciones orientado al acompañamiento económico personalizado, con análisis de ingresos y asignación automatizada de capital.',
+        },
+        {
+          desde: '2025',
+          hasta: '2026',
+          puesto: 'Desarrollo front-end y back-end',
+          lugar: 'Numérika AI · calculadora con IA integrada',
+          descripcion: 'Lógica detrás de modelos matemáticos paso a paso, integración de herramientas simbólicas y desarrollo de la interfaz de usuario para visualización interactiva.',
         },
         {
           desde: '2024',
-          hasta: 'Inicios de 2025',
-          puesto: 'Desarrollo del videojuego',
+          hasta: '2025',
+          puesto: 'Físicas y colisiones',
           lugar: 'Gonzi The Orc Slayer · videojuego 2D',
-          descripcion: 'Parte del equipo que desarrolló Gonzi The Orc Slayer, un juego 2D. Texto de ejemplo para contar qué parte del juego hiciste.',
+          descripcion: 'Desarrollo del motor de físicas del jugador, gestión de colisiones con el mapa y comportamiento mecánico frente a enemigos en un juego 2D en equipo.',
         },
       ],
       habilidades: [
@@ -58,7 +72,7 @@ export const integrantes = [
         {
           desde: '2024',
           hasta: 'En curso',
-          titulo: 'Carrera de grado',
+          titulo: 'Ingeniería en Informática',
           lugar: 'Universidad Católica de Salta',
         },
         {
@@ -90,7 +104,8 @@ export const integrantes = [
     profundo: '#45305E',
     bio: 'Armo interfaces en React pensando en que se entiendan y respondan rápido. En el equipo llevo la estructura del frontend, las rutas y el manejo de sesión.',
     chips: ['React', 'React Router', 'Vite'],
-    foto: null,
+    foto: '/fotos/santiago-chocobar.webp',
+    cvPdf: '/cv/santiago-chocobar.pdf',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'santichocovarios@gmail.com',
@@ -99,9 +114,9 @@ export const integrantes = [
     },
     tema: 'componentes',
     cv: {
-      titulo: 'Desarrollador frontend',
+      titulo: 'Programador junior',
       sobreMi:
-        'Estudiante de la Universidad Católica de Salta desde 2024. Formé parte del equipo de Gonzi The Orc Slayer, un juego 2D, y hoy llevo el frontend de este portfolio. Me gusta armar interfaces en React que se entiendan solas y separar todo en componentes fáciles de reutilizar.',
+        'Estudiante de 3.er año de Ingeniería en Informática con formación en algoritmos, estructuras de datos y desarrollo de software. Trabajé con Python, Java, JavaScript, React, Node.js y SQL Server, siempre con Git y GitHub. Aprendo rápido, soy detallista y me enfoco en resolver problemas con lógica.',
       experiencia: [
         {
           desde: 'Octubre de 2026',
@@ -115,32 +130,32 @@ export const integrantes = [
           hasta: 'Inicios de 2025',
           puesto: 'Desarrollo del videojuego',
           lugar: 'Gonzi The Orc Slayer · videojuego 2D',
-          descripcion: 'Parte del equipo que desarrolló Gonzi The Orc Slayer, un juego 2D. Texto de ejemplo para contar qué parte del juego hiciste.',
+          descripcion: 'Arquitectura del sistema, mecánicas de juego y resolución de bugs en entorno de pruebas, aplicando patrones de programación, lógica de estados y algoritmos.',
         },
       ],
       habilidades: [
         { nombre: 'React', nivel: 80 },
-        { nombre: 'React Router', nivel: 80 },
-        { nombre: 'JavaScript', nivel: 75 },
-        { nombre: 'Vite', nivel: 70 },
-        { nombre: 'Tailwind CSS', nivel: 65 },
-        { nombre: 'Git', nivel: 75 },
+        { nombre: 'JavaScript', nivel: 80 },
+        { nombre: 'Python', nivel: 75 },
+        { nombre: 'Java', nivel: 70 },
+        { nombre: 'Node.js', nivel: 65 },
+        { nombre: 'SQL Server', nivel: 65 },
       ],
       idiomas: [
         { nombre: 'Español', nivel: 'Nativo' },
-        { nombre: 'Inglés', nivel: 'Intermedio' },
+        { nombre: 'Inglés', nivel: 'B2 · Intermedio avanzado' },
       ],
       educacion: [
         {
           desde: '2024',
           hasta: 'En curso',
-          titulo: 'Carrera de grado',
+          titulo: 'Ingeniería en Informática',
           lugar: 'Universidad Católica de Salta',
         },
         {
           hasta: '2023',
           titulo: 'Bachiller en Ciencias Sociales y Humanidades',
-          lugar: 'Educación secundaria',
+          lugar: 'Colegio José Manuel Estrada',
         },
       ],
     },
@@ -168,7 +183,7 @@ export const integrantes = [
     profundo: '#3F5326',
     bio: 'Me ocupo de lo que no se ve: la base de datos, la API y la seguridad. Me gusta que los datos estén ordenados y que cada consulta sea rápida y segura.',
     chips: ['Node + Express', 'JWT', 'SQL'],
-    foto: null,
+    foto: '/fotos/gonzalo-luna.webp',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'gonchylaluna@gmail.com',
@@ -207,7 +222,7 @@ export const integrantes = [
         {
           desde: '2024',
           hasta: 'En curso',
-          titulo: 'Carrera de grado',
+          titulo: 'Ingeniería en Informática',
           lugar: 'Universidad Católica de Salta',
         },
         {
@@ -251,7 +266,7 @@ export const integrantes = [
     profundo: '#6A3530',
     bio: 'Diseño y animo interfaces que se sientan vivas sin cansar la vista. En el equipo me encargo de la identidad visual, el sistema de diseño y las animaciones.',
     chips: ['GSAP', 'Lottie', 'Tailwind'],
-    foto: null,
+    foto: '/fotos/juan-quinteros.webp',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'ignirq2006@gmail.com',
@@ -275,8 +290,15 @@ export const integrantes = [
           desde: 'Inicios de 2026',
           hasta: 'Actualidad',
           puesto: 'Diseño y desarrollo web',
-          lugar: 'BFC · página de un torneo',
+          lugar: 'Based Fighting Cup · plataforma web de un torneo',
           descripcion: 'Hice la página del torneo de punta a punta: identidad, estructura de las secciones, interfaz y desarrollo.',
+        },
+        {
+          desde: 'Inicios de 2026',
+          hasta: 'Actualidad',
+          puesto: 'Desarrollo completo del juego',
+          lugar: 'Gonzi The Orc Slayer: Luna Llena · proyecto personal',
+          descripcion: 'Secuela de Gonzi The Orc Slayer hecha de punta a punta: diseño de juego, programación en Python y Pygame, pixel art generado por código y versión web jugable en el navegador.',
         },
         {
           desde: 'Fines de 2025',
@@ -291,13 +313,6 @@ export const integrantes = [
           puesto: 'Diseño y desarrollo web',
           lugar: 'Invitaciones web · eventos',
           descripcion: 'Invitaciones web para eventos como bodas, pensadas para verse bien en el celular y con animaciones suaves.',
-        },
-        {
-          desde: '2025',
-          hasta: '2025',
-          puesto: 'Desarrollo completo del juego',
-          lugar: 'Gonzi The Orc Slayer: Luna Llena · secuela',
-          descripcion: 'Hice la secuela de Gonzi The Orc Slayer completa: programación, interfaz, menús y todo el apartado visual.',
         },
         {
           desde: '2024',
@@ -323,7 +338,7 @@ export const integrantes = [
         {
           desde: '2024',
           hasta: 'En curso',
-          titulo: 'Carrera de grado',
+          titulo: 'Ingeniería en Informática',
           lugar: 'Universidad Católica de Salta',
         },
         {

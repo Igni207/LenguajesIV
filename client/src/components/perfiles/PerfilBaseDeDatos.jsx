@@ -96,7 +96,9 @@ export function PerfilBaseDeDatos({ integrante }) {
                 variante="fantasma"
                 onClick={() =>
                   isAuthenticated
-                    ? mostrar({ tipo: 'info', titulo: 'CV en camino', mensaje: 'El PDF todavía no está cargado.' })
+                    ? integrante.cvPdf
+                      ? window.open(integrante.cvPdf, '_blank')
+                      : mostrar({ tipo: 'info', titulo: 'CV en camino', mensaje: 'El PDF todavía no está cargado.' })
                     : pedirSesion()
                 }
               >
@@ -264,9 +266,7 @@ export function PerfilBaseDeDatos({ integrante }) {
                       <button
                         type="button"
                         onClick={() =>
-                          isAuthenticated
-                            ? mostrar({ tipo: 'info', titulo: 'Próximamente', mensaje: 'El detalle de cada proyecto está en camino.' })
-                            : pedirSesion()
+                          isAuthenticated ? navigate(`/proyectos/${p.id}`) : pedirSesion()
                         }
                         className="min-h-10 cursor-pointer rounded-full border-[1.5px] bg-transparent px-4 text-sm font-semibold text-papel transition-colors hover:text-tinta"
                         style={{ borderColor: V.medio }}

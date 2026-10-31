@@ -160,7 +160,7 @@ export function PerfilComponentes({ integrante }) {
                     <span className="text-lg font-semibold">{p.titulo}</span>
                     {p.descripcion && <span className="text-sm text-niebla">{p.descripcion}</span>}
                     <div className="mt-auto pt-2">
-                      <Boton variante="secundario" onClick={perfil.verDetalle}>Ver detalle</Boton>
+                      <Boton variante="secundario" onClick={() => perfil.verDetalle(p)}>Ver detalle</Boton>
                     </div>
                   </article>
                 ))}
