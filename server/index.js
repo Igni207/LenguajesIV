@@ -11,31 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// datos hardcodeados temporalmente
-const metricasTotales = { visitas: 1248, usuarios: 42, consultas: 5 };
-const datosEvolucion = [
-  { dia: 'Lun', visitas: 120, usuarios: 4 },
-  { dia: 'Mar', visitas: 150, usuarios: 7 },
-  { dia: 'Mie', visitas: 180, usuarios: 5 },
-  { dia: 'Jue', visitas: 220, usuarios: 12 },
-  { dia: 'Vie', visitas: 250, usuarios: 8 },
-  { dia: 'Sab', visitas: 190, usuarios: 4 },
-  { dia: 'Dom', visitas: 138, usuarios: 2 }
-];
-const datosOrigen = [
-  { origen: 'Proyectos', cantidad: 18 },
-  { origen: 'Demos', cantidad: 15 },
-  { origen: 'Descarga CV', cantidad: 9 }
-];
-
-// endpoints para el dashboard
-app.get('/api/metrics', (req, res) => {
-  res.json({
-    totales: metricasTotales,
-    evolucion: datosEvolucion,
-    origen: datosOrigen
-  });
-});
 
 //Guardia(middleware): Exige un token válido
 function requireAuth(req, res, next) {
@@ -55,6 +30,19 @@ function requireAuth(req, res, next) {
 function requireAdmin (req, res, next) {
   if (req.user?.role !== 'admin') {
     return res.status(403).json({ mensaje: 'No tenés permiso para hacer esto.' });
+  }
+  next();
+}
+
+//Guardia(middleware) opcional: si hay un token válido, anota quién es; si no, deja pasar igual
+function optionalAuth(req, res, next) {
+  const [tipo, token] = (req.headers.authorization || '').split(' ');
+  if (tipo === 'Bearer' && token) {
+    try {
+      req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    } catch {
+      // token inválido: se trata como visitante
+    }
   }
   next();
 }
@@ -276,6 +264,75 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error al listar usuarios:', error.message);
     res.status(500).json({ mensaje: 'Error al obtener los usuarios' });
+  }
+});
+
+// Registrar una visita (público; si viene con token, se asocia al usuario)
+app.post('/api/visits', optionalAuth, async (req, res) => {
+  try {
+    const { ruta } = req.body || {};
+    const rutaLimpia = typeof ruta === 'string' ? ruta.trim() : '';
+    if (!rutaLimpia.startsWith('/') || rutaLimpia.length > 200) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores: { ruta: 'Ruta no válida.' } });
+    }
+    await pool.query(
+      'INSERT INTO visitas (ruta, usuario_id) VALUES ($1, (SELECT id FROM usuarios WHERE id = $2))',
+      [rutaLimpia, req.user?.id ?? null]
+    );
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al registrar la visita:', error.message);
+    res.status(500).json({ mensaje: 'Error al registrar la visita' });
+  }
+});
+
+const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+// Métricas del dashboard (por ahora abierta; se cierra a admin cuando el panel mande el token)
+app.get('/api/metrics', async (req, res) => {
+  try {
+    const [totales, evolucion, origen, perfiles] = await Promise.all([
+      pool.query(
+        `SELECT
+           (SELECT COUNT(*) FROM visitas)::int AS visitas,
+           (SELECT COUNT(*) FROM usuarios)::int AS usuarios,
+           (SELECT COUNT(*) FROM consultas WHERE estado = 'pendiente')::int AS consultas`
+      ),
+      pool.query(
+        `WITH hoy AS (SELECT (NOW() AT TIME ZONE 'America/Argentina/Salta')::date AS d),
+              dias AS (SELECT hoy.d - g AS dia FROM hoy, generate_series(0, 6) AS g)
+         SELECT EXTRACT(DOW FROM dias.dia)::int AS dow,
+           (SELECT COUNT(*) FROM visitas v
+             WHERE (v.creado_en AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Salta')::date = dias.dia)::int AS visitas,
+           (SELECT COUNT(*) FROM usuarios u
+             WHERE (u.creado_en AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Salta')::date = dias.dia)::int AS usuarios
+         FROM dias
+         ORDER BY dias.dia`
+      ),
+      pool.query(
+        `SELECT origen_registro, COUNT(*)::int AS cantidad
+         FROM usuarios
+         GROUP BY origen_registro
+         ORDER BY cantidad DESC`
+      ),
+      pool.query(
+        `SELECT ruta, COUNT(*)::int AS visitas
+         FROM visitas
+         WHERE ruta LIKE '/equipo/%'
+         GROUP BY ruta
+         ORDER BY visitas DESC`
+      )
+    ]);
+
+    res.json({
+      totales: totales.rows[0],
+      evolucion: evolucion.rows.map((r) => ({ dia: DIAS_SEMANA[r.dow], visitas: r.visitas, usuarios: r.usuarios })),
+      origen: origen.rows.map((r) => ({ origen: ETIQUETA_ORIGEN[r.origen_registro] || 'Sin dato', cantidad: r.cantidad })),
+      perfiles: perfiles.rows
+    });
+  } catch (error) {
+    console.error('Error al calcular las métricas:', error.message);
+    res.status(500).json({ mensaje: 'Error al calcular las métricas' });
   }
 });
 

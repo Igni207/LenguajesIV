@@ -244,3 +244,25 @@ POST http://localhost:3000/api/contact
 Content-Type: application/json
 
 { "nombre": "Ana", "email": "ana@mail.com", "tipo": "otro", "mensaje": "Un mensaje de prueba largo." }
+
+
+### Registrar visita -> 204
+POST http://localhost:3000/api/visits
+Content-Type: application/json
+
+{ "ruta": "/prueba" }
+
+### Visita de un perfil -> 204
+POST http://localhost:3000/api/visits
+Content-Type: application/json
+
+{ "ruta": "/equipo/gonzalo-luna" }
+
+### Ruta inválida -> 400
+POST http://localhost:3000/api/visits
+Content-Type: application/json
+
+{ "ruta": "sin-barra" }
+
+### Métricas -> 200
+GET http://localhost:3000/api/metrics
