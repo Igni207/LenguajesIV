@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Navbar } from '../components/layout/Navbar';
+import { Boton, Chip } from '../components/ui';
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const [filter, setFilter] = useState('all');
+  const navigate = useNavigate();
 
   const projects = [
     { id: 1, title: 'Sistema DFD y Dictionaries', category: 'systems' },
@@ -16,45 +20,78 @@ export default function Profile() {
     return p.category === filter;
   });
 
+  // Santy: le di formato con el diseño, tus datos y filtros siguen igual - Rojo
+  const filtros = [
+    { id: 'all', texto: 'Todos' },
+    { id: 'systems', texto: 'Sistemas' },
+    { id: 'web', texto: 'Web' },
+    { id: 'backend', texto: 'Backend' },
+  ];
+  const colores = { systems: '#7C9CE4', web: '#C29FE6', backend: '#B6D76E' };
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Perfil de Desarrollador</h1>
+    <>
+      <Navbar />
+      <header className="border-b border-pizarra/60 bg-grafito/60 pt-[72px]">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-6 px-4 py-12 sm:px-8">
+          <div className="flex items-center gap-5">
+            <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-fexx font-display text-[36px] font-bold text-tinta">
+              {(user?.name ?? 'U').slice(0, 1).toUpperCase()}
+            </span>
+            <div className="flex flex-col gap-1.5">
+              <span className="etiqueta text-fexx">{user?.role === 'admin' ? 'Administrador' : 'Mi cuenta'}</span>
+              <h1 className="m-0 text-[clamp(28px,4vw,40px)] leading-tight">{user ? `Hola, ${user.name}` : 'Vista de visitante'}</h1>
+              {user && <span className="text-niebla">{user.email}</span>}
+            </div>
+          </div>
           {user ? (
-            <p className="text-gray-600">Bienvenido, <span className="font-semibold">{user.name}</span> ({user.email})</p>
+            <div className="flex flex-wrap gap-3">
+              {user.role === 'admin' && (
+                <Boton variante="secundario" onClick={() => navigate('/admin')}>Panel admin</Boton>
+              )}
+              <Boton variante="secundario" onClick={logout}>Cerrar sesión</Boton>
+            </div>
           ) : (
-            <p className="text-gray-500">Vista de Visitante / Público</p>
+            <Boton onClick={() => navigate('/login')}>Iniciar sesión</Boton>
           )}
         </div>
-        {user ? (
-          <button onClick={logout} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
-            Cerrar Sesión
-          </button>
-        ) : (
-          <a href="/login" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-            Iniciar Sesión
-          </a>
-        )}
-      </div>
+      </header>
 
-      <div className="mb-6 flex gap-2">
-        <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg ${filter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Todos</button>
-        <button onClick={() => setFilter('systems')} className={`px-4 py-2 rounded-lg ${filter === 'systems' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Sistemas</button>
-        <button onClick={() => setFilter('web')} className={`px-4 py-2 rounded-lg ${filter === 'web' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Web</button>
-        <button onClick={() => setFilter('backend')} className={`px-4 py-2 rounded-lg ${filter === 'backend' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Backend</button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredProjects.map(project => (
-          <div key={project.id} className="p-4 border rounded-xl shadow-sm bg-white">
-            <h3 className="font-bold text-lg text-gray-800">{project.title}</h3>
-            <span className="text-xs uppercase px-2 py-1 bg-indigo-100 text-indigo-700 rounded mt-2 inline-block">
-              {project.category}
-            </span>
+      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-14 sm:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h2 className="m-0 text-[28px]">Proyectos</h2>
+          <div role="group" aria-label="Filtrar proyectos" className="flex flex-wrap gap-2">
+            {filtros.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilter(f.id)}
+                aria-pressed={filter === f.id}
+                className={`min-h-10 cursor-pointer rounded-full border-[1.5px] px-4 text-sm font-semibold transition-colors duration-200 ${
+                  filter === f.id ? 'border-fexx bg-fexx text-tinta' : 'border-pizarra bg-transparent text-papel hover:border-niebla'
+                }`}
+              >
+                {f.texto}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {filteredProjects.map((project) => (
+            <article
+              key={project.id}
+              className="flex items-center gap-4 rounded-2xl bg-grafito p-5 transition-transform duration-300 ease-salida hover:-translate-y-1"
+            >
+              <span className="h-12 w-1.5 shrink-0 rounded-full" style={{ background: colores[project.category] ?? '#EE8E80' }} />
+              <div className="flex flex-col gap-2">
+                <h3 className="m-0 text-lg">{project.title}</h3>
+                <div><Chip>{project.category}</Chip></div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </main>
+    </>
   );
 }

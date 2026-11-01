@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { integrantes } from '../data/integrantes'
 import { HeroIntegrantes } from '../components/animaciones/HeroIntegrantes'
+import { Navbar } from '../components/layout/Navbar'
 import { VentanaIntegrante } from '../components/animaciones/VentanaIntegrante'
 import { Boton, Campo, Chip, Esqueleto, IconoCandado, Modal, Spinner, useToast } from '../components/ui'
 // página de prueba nomás, para ver todo junto - Rojo
+// los componentes base están ocultos. Si los quieren ver de nuevo, pongan esto en true - Rojo
+const MOSTRAR_COMPONENTES = false
+
 const neutros = [
   ['Tinta', '#161923', 'bg-tinta border border-pizarra'],
   ['Grafito', '#20242F', 'bg-grafito'],
@@ -39,6 +43,7 @@ export default function GuiaDeEstilo() {
 
   return (
     <>
+      <Navbar />
       <HeroIntegrantes />
 
       <main className="mx-auto flex max-w-7xl overflow-x-clip flex-col gap-32 px-4 py-28 sm:px-8 lg:px-12">
@@ -60,6 +65,7 @@ export default function GuiaDeEstilo() {
           ))}
         </section>
 
+        {MOSTRAR_COMPONENTES && (
         <section aria-labelledby="t-comp" className="flex flex-col gap-12">
           <div className="flex flex-col gap-4">
             <span className="etiqueta text-fexx">Guía de estilo</span>
@@ -156,6 +162,7 @@ export default function GuiaDeEstilo() {
             </div>
           </Bloque>
         </section>
+        )}
       </main>
 
       <Modal
