@@ -6,7 +6,7 @@ const cors = require('cors');
 const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const {enviarConsulta} = require('./mailer');
+const { enviarConsulta, enviarRespuesta } = require('./mailer');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -193,8 +193,12 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ mensaje: 'Email o contraseña incorrectos.' });
     }
 
-    pool.query('INSERT INTO logins (usuario_id, proveedor) VALUES ($1, $2)', [u.id, 'email'])
-        .catch((err) => console.error('No se pudo guardar el login:', err.message));
+    // 4. Guardar el login para las métricas (si falla, no bloquea el ingreso)
+    try {
+      await pool.query('INSERT INTO logins (usuario_id, proveedor) VALUES ($1, $2)', [u.id, 'email']);
+    } catch (err) {
+      console.error('No se pudo guardar el login:', err.message);
+    }
 
     const user = {id: u.id, name: u.nombre, email: u.email, role: u.rol};
     const token = jwt.sign({id: u.id, role: u.rol}, process.env.JWT_SECRET, { expiresIn: '2h' });
@@ -456,6 +460,71 @@ app.post('/api/contact', async (req, res) => {
   } catch (error) {
     console.error('Error al guardar la consulta:', error.message);
     res.status(500).json({ mensaje: 'Error al enviar la consulta' });
+  }
+});
+
+const ETIQUETA_TIPO = { general: 'General', cotizacion: 'Cotización', asesoria: 'Asesoría' };
+
+// Listar consultas (admin) con las pendientes primero
+app.get('/api/consultas', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, nombre, email, tipo, mensaje, estado, respuesta,
+              to_char(creado_en AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Salta', 'DD/MM/YYYY') AS fecha
+       FROM consultas
+       ORDER BY (estado = 'pendiente') DESC, creado_en DESC`
+    );
+    res.json(r.rows.map((c) => ({
+      id: c.id,
+      remitente: c.nombre,
+      email: c.email,
+      tipo: ETIQUETA_TIPO[c.tipo] || c.tipo,
+      estado: c.estado === 'pendiente' ? 'Pendiente' : 'Respondida',
+      fecha: c.fecha,
+      mensaje: c.mensaje,
+      respuesta: c.respuesta
+    })));
+  } catch (error) {
+    console.error('Error al listar consultas:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener las consultas' });
+  }
+});
+
+// Responder una consulta por email (admin)
+app.post('/api/consultas/:id/responder', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const { respuesta } = req.body || {};
+    const texto = typeof respuesta === 'string' ? respuesta.trim() : '';
+    if (texto.length < 2 || texto.length > 5000) {
+      return res.status(400).json({
+        mensaje: 'Revisá los datos',
+        errores: { respuesta: 'La respuesta debe tener entre 2 y 5000 caracteres.' }
+      });
+    }
+
+    const buscada = await pool.query('SELECT nombre, email, mensaje FROM consultas WHERE id = $1', [id]);
+    const c = buscada.rows[0];
+    if (!c) return res.status(404).json({ mensaje: 'Consulta no encontrada.' });
+
+    // Primero el email: si falla, la consulta sigue pendiente
+    try {
+      await enviarRespuesta({ para: c.email, nombre: c.nombre, respuesta: texto, mensajeOriginal: c.mensaje });
+    } catch (err) {
+      console.error('No se pudo enviar la respuesta:', err.message);
+      return res.status(502).json({ mensaje: 'No se pudo enviar el email. La consulta sigue pendiente.' });
+    }
+
+    await pool.query(
+      "UPDATE consultas SET respuesta = $1, estado = 'respondida' WHERE id = $2",
+      [texto, id]
+    );
+    res.json({ id, estado: 'Respondida', respuesta: texto });
+  } catch (error) {
+    console.error('Error al responder la consulta:', error.message);
+    res.status(500).json({ mensaje: 'Error al responder la consulta' });
   }
 });
 

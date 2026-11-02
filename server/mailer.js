@@ -23,4 +23,15 @@ async function enviarConsulta({ nombre, email, tipo, mensaje }) {
   });
 }
 
-module.exports = { enviarConsulta };
+// Responde una consulta desde el panel de admin
+async function enviarRespuesta({ para, nombre, respuesta, mensajeOriginal }) {
+  await transporter.sendMail({
+    from: `"Portfolio" <${process.env.EMAIL_USER}>`,
+    to: para,
+    replyTo: process.env.EMAIL_TO || process.env.EMAIL_USER,
+    subject: 'Respuesta a tu consulta',
+    text: `Hola ${nombre},\n\n${respuesta}\n\n---\nTu consulta original:\n${mensajeOriginal}`
+  });
+}
+
+module.exports = { enviarConsulta, enviarRespuesta };

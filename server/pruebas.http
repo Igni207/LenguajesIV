@@ -266,3 +266,50 @@ Content-Type: application/json
 
 ### Métricas -> 200
 GET http://localhost:3000/api/metrics
+
+
+
+
+
+### Consulta de prueba con mi email -> 201
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{
+  "nombre": "Prueba Respuesta",
+  "email": "TU_EMAIL_REAL@gmail.com",
+  "tipo": "asesoria",
+  "mensaje": "Mensaje de prueba para responder desde el panel."
+}
+
+### Listar consultas SIN token -> 401
+GET http://localhost:3000/api/consultas
+
+### Listar con token NORMAL -> 403
+GET http://localhost:3000/api/consultas
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+### Listar con token ADMIN -> 200
+GET http://localhost:3000/api/consultas
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Responder (cambiá el 5 por el id de tu consulta de prueba) -> 200
+POST http://localhost:3000/api/consultas/7/responder
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "respuesta": "Hola, gracias por escribirnos. Esta es una respuesta de prueba." }
+
+### Responder vacío -> 400
+POST http://localhost:3000/api/consultas/7/responder
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "respuesta": "" }
+
+### Responder una consulta que no existe -> 404
+POST http://localhost:3000/api/consultas/9999/responder
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "respuesta": "No existe" }
