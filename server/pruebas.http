@@ -362,3 +362,53 @@ Authorization: Bearer PEGAR_TOKEN_ADMIN
 
 
 
+### Lista pública -> 200 (tienen que ser los 4)
+GET http://localhost:3000/api/services
+
+### Crear SIN token -> 401
+POST http://localhost:3000/api/services
+Content-Type: application/json
+
+{ "titulo": "Soporte técnico" }
+
+### Crear con token NORMAL -> 403
+POST http://localhost:3000/api/services
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+{ "titulo": "Soporte técnico" }
+
+### Crear con ADMIN -> 201
+POST http://localhost:3000/api/services
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Soporte técnico", "descripcion": "Mantenimiento de tu sitio.", "precioDesde": 15000 }
+
+### Datos malos -> 400
+POST http://localhost:3000/api/services
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "x", "precioDesde": "abc" }
+
+### Editar (cambiá el 5 por el id del servicio que creaste) -> 200
+PUT http://localhost:3000/api/services/5
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Soporte técnico mensual", "descripcion": "Mantenimiento mensual.", "precioDesde": 20000 }
+
+### Dar de baja -> 204
+DELETE http://localhost:3000/api/services/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Dar de baja otra vez -> 404
+DELETE http://localhost:3000/api/services/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+
+
+

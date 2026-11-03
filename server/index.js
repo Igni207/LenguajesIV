@@ -553,6 +553,120 @@ app.post('/api/consultas/:id/responder', requireAuth, requireAdmin, async (req, 
   }
 });
 
+// Valida y limpia los datos de un servicio (sirve para crear y para editar)
+function validarServicio(body) {
+  const b = body || {};
+  const errores = {};
+  const texto = (v) => (typeof v === 'string' ? v.trim() : '');
+
+  const titulo = texto(b.titulo);
+  if (titulo.length < 2 || titulo.length > 150) {
+    errores.titulo = 'El título debe tener entre 2 y 150 caracteres.';
+  }
+
+  const descripcion = texto(b.descripcion) || null;
+  if (descripcion && descripcion.length > 2000) {
+    errores.descripcion = 'La descripción es demasiado larga.';
+  }
+
+  let precioDesde = null;
+  const crudo = b.precioDesde;
+  if (crudo !== undefined && crudo !== null && crudo !== '') {
+    const n = (typeof crudo === 'number' || typeof crudo === 'string') ? Number(crudo) : NaN;
+    if (!Number.isFinite(n) || n < 0 || n > 99999999.99) {
+      errores.precioDesde = 'Ingresá un precio válido (un número mayor o igual a 0).';
+    } else {
+      precioDesde = Math.round(n * 100) / 100;
+    }
+  }
+
+  return { errores, datos: { titulo, descripcion, precioDesde } };
+}
+
+// PostgreSQL devuelve los NUMERIC como texto, asi que lo pasamos a número
+const aServicio = (r) => ({
+  id: r.id,
+  titulo: r.titulo,
+  descripcion: r.descripcion,
+  precioDesde: r.precio_desde === null ? null : Number(r.precio_desde)
+});
+
+// Lista pública de servicios activos
+app.get('/api/services', async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT id, titulo, descripcion, precio_desde FROM servicios WHERE activo = true ORDER BY id'
+    );
+    res.json(r.rows.map(aServicio));
+  } catch (error) {
+    console.error('Error al obtener servicios:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener los servicios' });
+  }
+});
+
+// Crear servicio (admin)
+app.post('/api/services', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { errores, datos: d } = validarServicio(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    const r = await pool.query(
+      `INSERT INTO servicios (titulo, descripcion, precio_desde)
+       VALUES ($1, $2, $3)
+       RETURNING id, titulo, descripcion, precio_desde`,
+      [d.titulo, d.descripcion, d.precioDesde]
+    );
+    res.status(201).json(aServicio(r.rows[0]));
+  } catch (error) {
+    console.error('Error al crear servicio:', error.message);
+    res.status(500).json({ mensaje: 'Error al crear el servicio' });
+  }
+});
+
+// Editar servicio (admin): reemplaza los datos editables
+app.put('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const { errores, datos: d } = validarServicio(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    const r = await pool.query(
+      `UPDATE servicios
+       SET titulo = $1, descripcion = $2, precio_desde = $3
+       WHERE id = $4 AND activo = true
+       RETURNING id, titulo, descripcion, precio_desde`,
+      [d.titulo, d.descripcion, d.precioDesde, id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Servicio no encontrado.' });
+    res.json(aServicio(r.rows[0]));
+  } catch (error) {
+    console.error('Error al editar servicio:', error.message);
+    res.status(500).json({ mensaje: 'Error al editar el servicio' });
+  }
+});
+
+// Dar de baja un servicio (admin): no se borra, se oculta
+app.delete('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const r = await pool.query(
+      'UPDATE servicios SET activo = false WHERE id = $1 AND activo = true RETURNING id',
+      [id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Servicio no encontrado.' });
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al dar de baja el servicio:', error.message);
+    res.status(500).json({ mensaje: 'Error al dar de baja el servicio' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`servidor corriendo en http://localhost:${PORT}`);
