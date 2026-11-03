@@ -1,22 +1,70 @@
 import { useState, useEffect } from 'react';
 import { Boton, Chip, Modal, Campo } from '../components/ui';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+import { useAuth } from '../context/AuthContext'; // Importado para obtener el token del usuario logueado
+import {   
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,   
   Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 
 export default function Admin() {
+  const { user } = useAuth(); // Obtenemos el usuario y su token
   const [vistaActiva, setVistaActiva] = useState('dashboard');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [proyectoEditando, setProyectoEditando] = useState(null); 
+  const [triggerRecargaProyectos, setTriggerRecargaProyectos] = useState(0);
+
   const handleAbrirModal = (proyecto = null) => {
     setProyectoEditando(proyecto);
     setModalAbierto(true);
   };
+
+  // Función para guardar o actualizar proyectos mandando el token y controlando errores
+  const handleGuardarProyecto = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const datosProyecto = {
+      titulo: formData.get('titulo'),
+      tipo: formData.get('tipo'),
+      autor: formData.get('autor'),
+      tecnologias: formData.get('tecnologias'),
+      repositorio: formData.get('repositorio'),
+      demo: formData.get('demo'),
+      destacado: document.getElementById('destacado').checked
+    };
+
+    const esEdicion = Boolean(proyectoEditando?.id);
+    const url = esEdicion 
+      ? `${import.meta.env.VITE_API_URL}/api/projects/${proyectoEditando.id}`
+      : `${import.meta.env.VITE_API_URL}/api/projects`;
+    const method = esEdicion ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`
+        },
+        body: JSON.stringify(datosProyecto)
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        setModalAbierto(false);
+        setTriggerRecargaProyectos(prev => prev + 1); // Refresca la tabla
+      } else {
+        alert("Error al guardar: " + (data.error || "Verificá los datos ingresados"));
+        console.error("Error del servidor:", data);
+      }
+    } catch (err) {
+      alert("Error de red al intentar conectar con el servidor.");
+      console.error("Error de red al guardar proyecto", err);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-tinta text-papel md:flex-row font-sans">
-      
-      {/* barra lateral e inferior */}
       <aside className="border-pizarra bg-grafito md:w-64 md:border-r p-6 flex flex-col gap-8 order-last md:order-first border-t md:border-t-0 fixed bottom-0 w-full md:relative md:w-auto z-20">
         <div className="hidden md:block">
           <span className="etiqueta text-fexx">Operador</span>
@@ -28,38 +76,35 @@ export default function Admin() {
           <Boton variante={vistaActiva === 'consultas' ? 'primario' : 'fantasma'} color="fexx" anchoCompleto onClick={() => setVistaActiva('consultas')}>Consultas</Boton>
           <Boton variante={vistaActiva === 'usuarios' ? 'primario' : 'fantasma'} color="fexx" anchoCompleto onClick={() => setVistaActiva('usuarios')}>Usuarios</Boton>
         </nav>
-        {/* Fexx: le agregué esto para poder volver a la home desde el panel - Rojo */}
         <a href="/" className="hidden md:flex mt-auto items-center gap-2 text-sm font-medium text-niebla no-underline hover:text-papel">← Volver al sitio</a>
       </aside>
 
-      {/* main */}
       <main className="flex-1 p-6 md:p-12 mb-24 md:mb-0 overflow-y-auto">
         <div className="max-w-6xl mx-auto">
-          {vistaActiva === 'dashboard' && <VistaDashboard />}
-          {vistaActiva === 'proyectos' && <VistaProyectos abrirModal={handleAbrirModal} />}
-          {vistaActiva === 'consultas' && <VistaConsultas />}
-          {vistaActiva === 'usuarios' && <VistaUsuarios />}
+          {vistaActiva === 'dashboard' && <VistaDashboard user={user} />}
+          {vistaActiva === 'proyectos' && <VistaProyectos abrirModal={handleAbrirModal} user={user} key={triggerRecargaProyectos} />}
+          {vistaActiva === 'consultas' && <VistaConsultas user={user} />}
+          {vistaActiva === 'usuarios' && <VistaUsuarios user={user} />}
         </div>
       </main>
 
-      {/* modal dinámico (se adapta si es nuevo o editar) */}
       <Modal 
         abierto={modalAbierto} 
         onCerrar={() => setModalAbierto(false)} 
         titulo={proyectoEditando ? "Editar Proyecto" : "Nuevo Proyecto"}
         ancho={600}
       >
-        <form key={proyectoEditando ? proyectoEditando.id : 'nuevo'} className="flex w-full flex-col gap-5 mt-4 text-left" onSubmit={(e) => { e.preventDefault(); setModalAbierto(false); }}>
-          <Campo etiqueta="Título del Proyecto" defaultValue={proyectoEditando?.titulo || ''} placeholder="Ej: Portfolio Fullstack" />
+        <form key={proyectoEditando ? proyectoEditando.id : 'nuevo'} className="flex w-full flex-col gap-5 mt-4 text-left" onSubmit={handleGuardarProyecto}>
+          <Campo name="titulo" etiqueta="Título del Proyecto" defaultValue={proyectoEditando?.titulo || ''} placeholder="Ej: Portfolio Fullstack" />
           
           <div className="grid grid-cols-2 gap-4">
-            <Campo etiqueta="Tipo" defaultValue={proyectoEditando?.tipo || ''} placeholder="Frontend, Backend, etc." />
-            <Campo etiqueta="Autor" defaultValue={proyectoEditando?.autor || ''} placeholder="Tu nombre o equipo" />
+            <Campo name="tipo" etiqueta="Tipo" defaultValue={proyectoEditando?.tipo || ''} placeholder="Frontend, Backend, etc." />
+            <Campo name="autor" etiqueta="Autor" defaultValue={proyectoEditando?.autor || ''} placeholder="Tu nombre o equipo" />
           </div>
 
-          <Campo etiqueta="Tecnologías (separadas por coma)" placeholder="React, Node, Tailwind..." />
-          <Campo etiqueta="URL del Repositorio" type="url" placeholder="https://github.com/..." />
-          <Campo etiqueta="URL de la Demo (Opcional)" type="url" placeholder="https://..." />
+          <Campo name="tecnologias" etiqueta="Tecnologías (separadas por coma)" defaultValue={proyectoEditando?.tecnologias || ''} placeholder="React, Node, Tailwind..." />
+          <Campo name="repositorio" etiqueta="URL del Repositorio" type="url" defaultValue={proyectoEditando?.repositorio || ''} placeholder="https://github.com/..." />
+          <Campo name="demo" etiqueta="URL de la Demo (Opcional)" type="url" defaultValue={proyectoEditando?.demo || ''} placeholder="https://..." />
           
           <div className="flex items-center gap-3 mt-2">
             <input type="checkbox" id="destacado" defaultChecked={proyectoEditando?.destacado} className="size-5 accent-fexx" />
@@ -72,30 +117,35 @@ export default function Admin() {
           </div>
         </form>
       </Modal>
-
     </div>
   );
 }
 
 // --- SUBCOMPONENTES ---
 
-function VistaDashboard() {
+function VistaDashboard({ user }) {
   const [metricas, setMetricas] = useState({ visitas: 0, usuarios: 0, consultas: 0 });
   const [datosEvolucion, setDatosEvolucion] = useState([]);
   const [datosOrigen, setDatosOrigen] = useState([]);
   const [cargando, setCargando] = useState(true);
+
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/metrics`)
+    if (!user?.token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/metrics`, {
+      headers: { 'Authorization': `Bearer ${user.token}` }
+    })
       .then(res => res.json())
       .then(data => {
-        setMetricas(data.totales);
-        setDatosEvolucion(data.evolucion);
-        setDatosOrigen(data.origen);
+        setMetricas(data.totales || { visitas: 0, usuarios: 0, consultas: 0 });
+        setDatosEvolucion(data.evolucion || []);
+        setDatosOrigen(data.origen || []);
         setCargando(false);
       })
       .catch(err => console.error("error al traer metricas - fexx", err));
-  }, []);
+  }, [user]);
+
   if (cargando) return <div className="text-niebla animate-pulse">cargando métricas...</div>;
+
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Dashboard de Métricas</h1>
@@ -139,19 +189,43 @@ function VistaDashboard() {
     </>
   );
 }
-function VistaProyectos({ abrirModal }) {
+
+function VistaProyectos({ abrirModal, user }) {
   const [proyectos, setProyectos] = useState([]);
   const [cargando, setCargando] = useState(true);
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/projects`)
+
+  const cargarProyectos = () => {
+    if (!user?.token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/projects`, {
+      headers: { 'Authorization': `Bearer ${user.token}` }
+    })
       .then(res => res.json())
       .then(data => {
         setProyectos(data);
         setCargando(false);
       })
       .catch(err => console.error("error al traer proyectos - fexx", err));
-  }, []);
+  };
+
+  useEffect(() => {
+    cargarProyectos();
+  }, [user]);
+
+  const handleEliminarProyecto = async (id) => {
+    if (!window.confirm("¿Seguro querés eliminar este proyecto?")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${user?.token}` }
+      });
+      if (res.ok) cargarProyectos();
+    } catch (err) {
+      console.error("Error al eliminar proyecto", err);
+    }
+  };
+
   if (cargando) return <div className="text-niebla animate-pulse">cargando proyectos...</div>;
+
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Gestión de Proyectos</h1>
@@ -180,8 +254,9 @@ function VistaProyectos({ abrirModal }) {
                   <td className="py-4 pr-4">
                     {p.destacado ? <Chip tono="exito">Destacado</Chip> : <Chip tono="neutro">Normal</Chip>}
                   </td>
-                  <td className="py-4 text-right">
-                    <Boton variante="secundario" tamaño="md" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => abrirModal(p)}>Editar</Boton>
+                  <td className="py-4 text-right flex gap-2 justify-end">
+                    <Boton variante="secundario" tamaño="md" onClick={() => abrirModal(p)}>Editar</Boton>
+                    <Boton variante="fantasma" color="error" tamaño="md" onClick={() => handleEliminarProyecto(p.id)}>Baja</Boton>
                   </td>
                 </tr>
               ))}
@@ -192,11 +267,50 @@ function VistaProyectos({ abrirModal }) {
     </>
   );
 }
-function VistaConsultas() {
-  const consultas = [
-    { id: 1, remitente: 'Empresa S.A.', email: 'contacto@empresa.com', tipo: 'Cotización', estado: 'Pendiente', fecha: '19/10/2026' },
-    { id: 2, remitente: 'Juan Pérez', email: 'juanp@gmail.com', tipo: 'Asesoría', estado: 'Respondida', fecha: '18/10/2026' },
-  ];
+
+function VistaConsultas({ user }) {
+  const [consultas, setConsultas] = useState([]);
+  const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
+  const [textoRespuesta, setTextoRespuesta] = useState('');
+
+  const cargarConsultas = () => {
+    if (!user?.token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/consultas`, {
+      headers: { 'Authorization': `Bearer ${user.token}` }
+    })
+      .then(res => res.json())
+      .then(data => setConsultas(data))
+      .catch(err => console.error("Error al traer consultas", err));
+  };
+
+  useEffect(() => {
+    cargarConsultas();
+  }, [user]);
+
+  const handleEnviarRespuesta = async (e) => {
+    e.preventDefault();
+    if (!textoRespuesta.trim() || !consultaSeleccionada) return;
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/consultas/${consultaSeleccionada.id}/responder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`
+        },
+        body: JSON.stringify({ respuesta: textoRespuesta })
+      });
+
+      if (res.ok) {
+        setConsultaSeleccionada(null);
+        setTextoRespuesta('');
+        cargarConsultas();
+      }
+    } catch (err) {
+      console.error("Error al responder consulta", err);
+    }
+  };
+
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Consultas Pendientes</h1>
@@ -226,7 +340,7 @@ function VistaConsultas() {
                     {c.estado === 'Pendiente' ? <Chip tono="advertencia">Pendiente</Chip> : <Chip tono="exito">Respondida</Chip>}
                   </td>
                   <td className="py-4 text-right">
-                    <Boton variante="secundario" tamaño="md" className="opacity-0 group-hover:opacity-100 transition-opacity">Responder</Boton>
+                    <Boton variante="secundario" tamaño="md" onClick={() => setConsultaSeleccionada(c)}>Responder</Boton>
                   </td>
                 </tr>
               ))}
@@ -234,14 +348,64 @@ function VistaConsultas() {
           </table>
         </div>
       </section>
+
+      {/* Modal para redactar la respuesta */}
+      {consultaSeleccionada && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-grafito border border-pizarra rounded-3xl p-6 sm:p-8 max-w-lg w-full flex flex-col gap-4 shadow-2xl">
+            <h3 className="text-xl font-display font-bold text-fexx">Responder a {consultaSeleccionada.remitente}</h3>
+            <p className="text-sm text-niebla m-0">Correo: {consultaSeleccionada.email}</p>
+            
+            <form onSubmit={handleEnviarRespuesta} className="flex flex-col gap-4 mt-2">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono uppercase tracking-wider text-niebla">Tu respuesta</label>
+                <textarea 
+                  rows="4"
+                  value={textoRespuesta}
+                  onChange={(e) => setTextoRespuesta(e.target.value)}
+                  placeholder="Escribí tu respuesta aquí..."
+                  className="w-full rounded-xl border border-pizarra bg-tinta p-3 text-papel text-sm focus:outline-none focus:border-fexx"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 justify-end mt-2">
+                <Boton variante="secundario" onClick={() => { setConsultaSeleccionada(null); setTextoRespuesta(''); }}>Cancelar</Boton>
+                <Boton type="submit" color="fexx">Enviar Respuesta</Boton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-function VistaUsuarios() {
-  const usuarios = [
-    { id: 1, nombre: 'Ana Gomez', email: 'ana.gomez@gmail.com', origen: 'Proyectos', rol: 'Usuario' },
-    { id: 2, nombre: 'Marcos Ruiz', email: 'marcos88@hotmail.com', origen: 'Demos', rol: 'Usuario' },
-  ];
+function VistaUsuarios({ user }) {
+  const [usuarios, setUsuarios] = useState([]);
+
+  const cargarUsuarios = () => {
+    if (!user?.token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
+      headers: { 'Authorization': `Bearer ${user.token}` }
+    })
+      .then(res => res.json())
+      .then(data => setUsuarios(data))
+      .catch(err => console.error("Error al traer usuarios", err));
+  };
+  useEffect(() => {
+    cargarUsuarios();
+  }, [user]);
+  const handleEliminarUsuario = async (id) => {
+    if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${user?.token}` }
+      });
+      if (res.ok) cargarUsuarios();
+    } catch (err) {
+      console.error("Error al eliminar usuario", err);
+    }
+  };
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Gestión de Usuarios</h1>
@@ -266,7 +430,7 @@ function VistaUsuarios() {
                   <td className="py-4 text-niebla pr-4">{u.origen}</td>
                   <td className="py-4 text-niebla pr-4">{u.rol}</td>
                   <td className="py-4 text-right">
-                    <Boton variante="fantasma" color="error" tamaño="md" className="opacity-0 group-hover:opacity-100 transition-opacity">Eliminar</Boton>
+                    <Boton variante="fantasma" color="error" tamaño="md" onClick={() => handleEliminarUsuario(u.id)}>Eliminar</Boton>
                   </td>
                 </tr>
               ))}
