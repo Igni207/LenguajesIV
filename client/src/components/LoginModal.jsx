@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../data/api';
 import { Boton, Campo } from './ui';
 
 export default function LoginModal({ isOpen, onClose, isStandalone = false }) {
@@ -16,9 +17,9 @@ export default function LoginModal({ isOpen, onClose, isStandalone = false }) {
 
   const from = location.state?.from?.pathname;
 
-  if (!isOpen) return null;
+  if (!isOpen && !isStandalone) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -38,24 +39,37 @@ export default function LoginModal({ isOpen, onClose, isStandalone = false }) {
       return;
     }
 
-    const isAdmin = email.toLowerCase().includes('admin');
-    const userData = {
-      name: isRegister ? name : (isAdmin ? 'Administrador' : 'Usuario'),
-      email,
-      role: isAdmin ? 'admin' : 'user'
-    };
+    try {
+      const endpoint = isRegister ? '/auth/register' : '/auth/login';
+      const payload = isRegister ? { name, email, password } : { email, password };
 
-    login(userData);
+      const data = await api(endpoint, {
+        method: 'POST',
+        body: payload,
+      });
 
-    if (!isStandalone && onClose) {
-      onClose();
+      const userData = {
+        name: data.user?.name || data.name || (isRegister ? name : 'Usuario'),
+        email: data.user?.email || data.email || email,
+        role: data.user?.role || data.role || 'user',
+        token: data.token
+      };
+
+      login(userData);
+
+      if (!isStandalone && onClose) {
+        onClose();
+      }
+
+      const isAdmin = userData.role === 'admin';
+      const targetPath = from || (isAdmin ? '/admin' : '/perfil');
+      navigate(targetPath, { replace: true });
+
+    } catch (err) {
+      setError(err.message || err.error || 'No se pudo conectar con el servidor.');
     }
-
-    const targetPath = from || (isAdmin ? '/admin' : '/perfil');
-    navigate(targetPath, { replace: true });
   };
 
-  // Santy: le di formato con el diseño, la lógica es la tuya tal cual - Rojo
   const formulario = (
     <div className="flex w-full max-w-[420px] flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -139,6 +153,7 @@ export default function LoginModal({ isOpen, onClose, isStandalone = false }) {
   );
 
   if (!isStandalone) {
+    if (!isOpen) return null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div aria-hidden="true" onClick={onClose} className="absolute inset-0 bg-tinta/70 backdrop-blur-md" />
