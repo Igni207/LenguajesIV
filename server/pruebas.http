@@ -313,3 +313,52 @@ Content-Type: application/json
 Authorization: Bearer PEGAR_TOKEN_ADMIN
 
 { "respuesta": "No existe" }
+
+
+
+
+
+### Login contra PRODUCCIÓN
+POST https://lenguajesiv.vercel.app/api/auth/login
+Content-Type: application/json
+
+{ "email": "normal@mail.com", "password": "clave123456" }
+
+
+
+
+
+### Registrar usuario descartable
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{ "name": "Para Borrar", "email": "borrar@mail.com", "password": "clave12345" }
+
+
+
+### Eliminar SIN token -> 401
+DELETE http://localhost:3000/api/users/6
+
+### Eliminar con token NORMAL -> 403
+DELETE http://localhost:3000/api/users/6
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+### Eliminar el descartable con ADMIN -> 204
+DELETE http://localhost:3000/api/users/6
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Eliminarlo otra vez -> 404
+DELETE http://localhost:3000/api/users/6
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Eliminar un admin -> 403
+DELETE http://localhost:3000/api/users/5
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+### Eliminarte a vos mismo -> 400
+DELETE http://localhost:3000/api/users/1
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+

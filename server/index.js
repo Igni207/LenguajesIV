@@ -271,6 +271,31 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// Eliminar un usuario (admin)
+app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+    if (id === req.user.id) {
+      return res.status(400).json({ mensaje: 'No podés eliminar tu propia cuenta.' });
+    }
+
+    const buscado = await pool.query('SELECT rol FROM usuarios WHERE id = $1', [id]);
+    if (buscado.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+    }
+    if (buscado.rows[0].rol === 'admin') {
+      return res.status(403).json({ mensaje: 'No se pueden eliminar administradores desde el panel.' });
+    }
+
+    await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al eliminar el usuario:', error.message);
+    res.status(500).json({ mensaje: 'Error al eliminar el usuario' });
+  }
+});
+
 // Registrar una visita (público; si viene con token, se asocia al usuario)
 app.post('/api/visits', optionalAuth, async (req, res) => {
   try {
