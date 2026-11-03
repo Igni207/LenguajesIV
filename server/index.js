@@ -99,28 +99,35 @@ function validarProyecto (body) {
 // Reglas que dependen de la base: autor válido y máximo 2 destacados por integrante
 async function reglasDeProyecto(d, idActual) {
   const errores = {};
-  if (d.autor) {
-    const r = await pool.query(
-      `SELECT alias FROM integrantes
-       WHERE lower($1::text) IN (lower(alias), lower(nombre), lower(nombre_corto))`,
-      [d.autor]
+  if (!d.autor) return errores;
+
+  // Proyecto de todo el equipo: es válido y no cuenta para el límite de destacados
+  if (d.autor.toLowerCase() === 'equipo') {
+    d.autor = 'Equipo';
+    return errores;
+  }
+
+  const r = await pool.query(
+    `SELECT alias FROM integrantes
+     WHERE lower($1::text) IN (lower(alias), lower(nombre), lower(nombre_corto))`,
+    [d.autor]
+  );
+  if (r.rows.length === 0) {
+    errores.autor = 'Elegí un integrante del equipo (Fexx, Ssanty, Ultronzi o Rojo) o "Equipo".';
+    return errores;
+  }
+
+  d.autor = r.rows[0].alias; // se guarda siempre con el alias exacto
+  if (d.destacado) {
+    const c = await pool.query(
+      `SELECT COUNT(*)::int AS n
+       FROM proyectos
+       WHERE activo = true AND destacado = true
+         AND lower(autor) = lower($1::text) AND id <> $2`,
+      [d.autor, idActual]
     );
-    if (r.rows.length === 0) {
-      errores.autor = 'Elegí un integrante del equipo (Fexx, Ssanty, Ultronzi o Rojo).';
-    } else {
-      d.autor = r.rows[0].alias; // se guarda siempre con el alias exacto
-      if (d.destacado) {
-        const c = await pool.query(
-          `SELECT COUNT(*)::int AS n
-           FROM proyectos
-           WHERE activo = true AND destacado = true
-             AND lower(autor) = lower($1::text) AND id <> $2`,
-          [d.autor, idActual]
-        );
-        if (c.rows[0].n >= 2) {
-          errores.destacado = 'Cada integrante puede tener como máximo 2 proyectos destacados.';
-        }
-      }
+    if (c.rows[0].n >= 2) {
+      errores.destacado = 'Cada integrante puede tener como máximo 2 proyectos destacados.';
     }
   }
   return errores;
