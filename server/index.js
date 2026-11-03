@@ -96,6 +96,36 @@ function validarProyecto (body) {
   };
 }
 
+// Reglas que dependen de la base: autor válido y máximo 2 destacados por integrante
+async function reglasDeProyecto(d, idActual) {
+  const errores = {};
+  if (d.autor) {
+    const r = await pool.query(
+      `SELECT alias FROM integrantes
+       WHERE lower($1::text) IN (lower(alias), lower(nombre), lower(nombre_corto))`,
+      [d.autor]
+    );
+    if (r.rows.length === 0) {
+      errores.autor = 'Elegí un integrante del equipo (Fexx, Ssanty, Ultronzi o Rojo).';
+    } else {
+      d.autor = r.rows[0].alias; // se guarda siempre con el alias exacto
+      if (d.destacado) {
+        const c = await pool.query(
+          `SELECT COUNT(*)::int AS n
+           FROM proyectos
+           WHERE activo = true AND destacado = true
+             AND lower(autor) = lower($1::text) AND id <> $2`,
+          [d.autor, idActual]
+        );
+        if (c.rows[0].n >= 2) {
+          errores.destacado = 'Cada integrante puede tener como máximo 2 proyectos destacados.';
+        }
+      }
+    }
+  }
+  return errores;
+}
+
 app.get('/api/projects', async (req, res) => {
   try{
     const resultado = await pool.query(
@@ -373,6 +403,11 @@ app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
     }
+    const erroresBD = await reglasDeProyecto(d, 0);
+    if (Object.keys(erroresBD).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores: erroresBD });
+    }
+
     const r = await pool.query(
       `INSERT INTO proyectos
          (titulo, descripcion, imagen_url, demo_url, repo_url, tipo, autor, tecnologias, destacado)
@@ -396,6 +431,11 @@ app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
     const {errores, datos: d} = validarProyecto(req.body);
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+
+    const erroresBD = await reglasDeProyecto(d, id);
+    if (Object.keys(erroresBD).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores: erroresBD });
     }
 
     const r = await pool.query(

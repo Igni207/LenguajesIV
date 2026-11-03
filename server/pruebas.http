@@ -411,4 +411,51 @@ Authorization: Bearer PEGAR_TOKEN_ADMIN
 
 
 
+### Autor inexistente -> 400 (errores.autor)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba autor", "autor": "Nadie" }
+
+### Autor por nombre corto -> 201 (y vuelve guardado como Ultronzi)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba nombre corto", "autor": "gonzalo" }
+
+### Destacado 1 de Rojo -> 201
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba destacado 1", "autor": "Rojo", "destacado": true }
+
+### Destacado 2 de Rojo -> 201
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba destacado 2", "autor": "Rojo", "destacado": true }
+
+### Destacado 3 de Rojo -> 400 (errores.destacado)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba destacado 3", "autor": "Rojo", "destacado": true }
+
+### Sin destacar, para el mismo autor -> 201
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba normal", "autor": "Rojo", "destacado": false }
+
+
+
+
+
+
 
