@@ -6,10 +6,29 @@ const cors = require('cors');
 const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
 const { enviarConsulta, enviarRespuesta } = require('./mailer');
 const app = express();
-app.use(cors());
-app.use(express.json());
+// Seguridad básica: cabeceras de protección
+app.use(helmet());
+
+// CORS: solo el sitio publicado y el entorno local pueden leer las respuestas desde otro origen.
+// (Los pedidos del propio sitio publicado no dependen de esto.)
+const ORIGENES_PERMITIDOS = [
+  'https://lenguajesiv.vercel.app',
+  'http://localhost:5173',
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : [])
+];
+app.use(cors({
+  origin: (origin, callback) => callback(null, !origin || ORIGENES_PERMITIDOS.includes(origin))
+}));
+
+// Los pedidos no pueden pesar más de 20 kb (esto deberia alcanzar de sobra para los formularios)
+app.use(express.json({ limit: '20kb' }));
+
+if (!process.env.JWT_SECRET) {
+  console.error('FALTA JWT_SECRET: el registro y el login van a fallar.');
+}
 
 
 //Guardia(middleware): Exige un token válido
@@ -725,6 +744,23 @@ app.delete('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
     console.error('Error al dar de baja el servicio:', error.message);
     res.status(500).json({ mensaje: 'Error al dar de baja el servicio' });
   }
+});
+
+// Rutas /api que no existen
+app.use('/api', (req, res) => {
+  res.status(404).json({ mensaje: 'Ruta no encontrada.' });
+});
+
+// Errores no controlados: siempre responden JSON
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ mensaje: 'El pedido es demasiado grande.' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ mensaje: 'El cuerpo del pedido no es un JSON válido.' });
+  }
+  console.error('Error inesperado:', err.message);
+  res.status(500).json({ mensaje: 'Error inesperado del servidor' });
 });
 
 const PORT = process.env.PORT || 3000;

@@ -506,3 +506,22 @@ Content-Type: application/json
 
 
 
+
+### JSON mal formado -> 400 con mensaje
+POST http://localhost:3000/api/contact
+Content-Type: application/json
+
+{ "nombre": "Ana",}
+
+### Ruta que no existe -> 404 en JSON
+GET http://localhost:3000/api/no-existe
+
+### CORS con origen permitido -> la respuesta trae Access-Control-Allow-Origin
+GET http://localhost:3000/api/projects
+Origin: http://localhost:5173
+
+### CORS con origen NO permitido -> la respuesta NO trae Access-Control-Allow-Origin
+GET http://localhost:3000/api/projects
+Origin: https://sitio-malicioso.com
+
+
