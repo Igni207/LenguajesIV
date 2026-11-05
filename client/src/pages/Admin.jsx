@@ -457,4 +457,5 @@ function TarjetaMetrica({ titulo, valor, color }) {
       <span className={`text-5xl font-bold font-mono ${color}`}>{valor}</span>
     </div>
   );
+  
 }
