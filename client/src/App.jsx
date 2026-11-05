@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import TrackVisits from './components/TrackVisits';
 import Inicio from './pages/Inicio';
 import GuiaDeEstilo from './pages/GuiaDeEstilo';
 import NoEncontrada from './pages/NoEncontrada';
@@ -14,6 +15,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <TrackVisits />
         <Routes>
           {/* Santy: la home ahora está en "/" - Rojo */}
           <Route path="/" element={<Inicio />} />
