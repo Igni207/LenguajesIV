@@ -53,6 +53,15 @@ const COLUMNAS_PROYECTO = `id, titulo, descripcion,
   imagen_url AS "imagenUrl", demo_url AS "demoUrl", repo_url AS "repoUrl",
   tipo, autor, tecnologias, destacado`;
 
+
+// Acepta también los nombres que usa el panel (repositorio y demo)
+function normalizarBodyProyecto(body) {
+  const b = (body && typeof body === 'object' && !Array.isArray(body)) ? { ...body } : {};
+  if (b.repoUrl === undefined && b.repositorio !== undefined) b.repoUrl = b.repositorio;
+  if (b.demoUrl === undefined && b.demo !== undefined) b.demoUrl = b.demo;
+  return b;
+}
+
 // Valida y limpia los datos de un proyecto (sirve para crear y para editar)
 function validarProyecto (body) {
   const b = body || {};
@@ -354,8 +363,8 @@ app.post('/api/visits', optionalAuth, async (req, res) => {
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-// Métricas del dashboard (por ahora abierta; se cierra a admin cuando el panel mande el token)
-app.get('/api/metrics', async (req, res) => {
+// Métricas del dashboard 
+app.get('/api/metrics', requireAuth, requireAdmin, async (req, res) => {
   try {
     const [totales, evolucion, origen, perfiles] = await Promise.all([
       pool.query(
@@ -406,7 +415,7 @@ app.get('/api/metrics', async (req, res) => {
 // Crear proyecto (admin)
 app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { errores, datos: d } = validarProyecto(req.body);
+    const { errores, datos: d } = validarProyecto(normalizarBodyProyecto(req.body));
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
     }
@@ -429,17 +438,23 @@ app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-//Editar proyecto (Admin) (reemplaza los datos editables)
+// Editar proyecto (admin): los campos que no se mandan se conservan
 app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
 
-    const {errores, datos: d} = validarProyecto(req.body);
+    const actual = await pool.query(
+      `SELECT ${COLUMNAS_PROYECTO} FROM proyectos WHERE id = $1 AND activo = true`,
+      [id]
+    );
+    if (actual.rows.length === 0) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+
+    const { errores, datos: d } = validarProyecto({ ...actual.rows[0], ...normalizarBodyProyecto(req.body) });
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
     }
-
+    
     const erroresBD = await reglasDeProyecto(d, id);
     if (Object.keys(erroresBD).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores: erroresBD });
@@ -453,9 +468,7 @@ app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
        RETURNING ${COLUMNAS_PROYECTO}`,
       [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado, id]
     );
-
-    if (r.rows.length === 0 ) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
-
+    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
     res.json(r.rows[0]);
 
   } catch (error) {

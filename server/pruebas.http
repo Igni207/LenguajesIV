@@ -465,5 +465,44 @@ Authorization: Bearer PEGAR_TOKEN_ADMIN
 
 
 
+### Crear proyecto de prueba -> 201 (anotá el id)
+POST http://localhost:3000/api/projects
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba merge", "descripcion": "Descripción que no debe perderse", "autor": "Rojo", "tipo": "Web" }
+
+### Editar con el cuerpo EXACTO del panel (sin descripción) -> 200
+PUT http://localhost:3000/api/projects/13
+Content-Type: application/json
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+{ "titulo": "Prueba merge 2", "tipo": "Web", "autor": "Rojo", "tecnologias": "React", "repositorio": "https://github.com/Igni207/LenguajesIV", "demo": "https://example.com", "destacado": false }
+
+### Ver el detalle -> 200: descripcion intacta, repoUrl y demoUrl cargados
+GET http://localhost:3000/api/projects/13
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+### Métricas SIN token -> 401
+GET http://localhost:3000/api/metrics
+
+### Métricas con token NORMAL -> 403
+GET http://localhost:3000/api/metrics
+Authorization: Bearer PEGAR_TOKEN_NORMAL
+
+### Métricas con ADMIN -> 200
+GET http://localhost:3000/api/metrics
+Authorization: Bearer PEGAR_TOKEN_ADMIN
+
+
+
+
+
+### Visita a la misma dirección que usó la página
+POST https://lenguajesiv.vercel.app/lenguajesiv.vercel.app/api/visits
+Content-Type: application/json
+
+{ "ruta": "/prueba" }
+
 
 
