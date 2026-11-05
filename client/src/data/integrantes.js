@@ -1,4 +1,5 @@
 // Gonzi: después esto tendría que venir de la API, por ahora está a mano - Rojo
+//nya
 
 export const integrantes = [
   {
