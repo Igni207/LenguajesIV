@@ -193,10 +193,23 @@ function VistaProyectos({ abrirModal }) {
   );
 }
 function VistaConsultas() {
-  const consultas = [
-    { id: 1, remitente: 'Empresa S.A.', email: 'contacto@empresa.com', tipo: 'Cotización', estado: 'Pendiente', fecha: '19/10/2026' },
-    { id: 2, remitente: 'Juan Pérez', email: 'juanp@gmail.com', tipo: 'Asesoría', estado: 'Respondida', fecha: '18/10/2026' },
-  ];
+  const [consultas, setConsultas] = useState([
+    { id: 1, remitente: 'Empresa S.A.', email: 'contacto@empresa.com', tipo: 'Cotización', estado: 'Pendiente', fecha: '19/10/2026', mensaje: 'Hola, quisiéramos solicitar una cotización para el desarrollo de un sistema web.' },
+    { id: 2, remitente: 'Juan Pérez', email: 'juanp@gmail.com', tipo: 'Asesoría', estado: 'Respondida', fecha: '18/10/2026', mensaje: 'Necesito orientación sobre la arquitectura del proyecto.' },
+  ]);
+  const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
+  const [respuesta, setRespuesta] = useState('');
+
+  const handleEnviarRespuesta = (e) => {
+    e.preventDefault();
+    if (!consultaSeleccionada) return;
+    setConsultas((prev) =>
+      prev.map((c) => (c.id === consultaSeleccionada.id ? { ...c, estado: 'Respondida' } : c))
+    );
+    setConsultaSeleccionada(null);
+    setRespuesta('');
+  };
+
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Consultas Pendientes</h1>
@@ -226,7 +239,14 @@ function VistaConsultas() {
                     {c.estado === 'Pendiente' ? <Chip tono="advertencia">Pendiente</Chip> : <Chip tono="exito">Respondida</Chip>}
                   </td>
                   <td className="py-4 text-right">
-                    <Boton variante="secundario" tamaño="md" className="opacity-0 group-hover:opacity-100 transition-opacity">Responder</Boton>
+                    <Boton 
+                      variante="secundario" 
+                      tamaño="md" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setConsultaSeleccionada(c)}
+                    >
+                      Responder
+                    </Boton>
                   </td>
                 </tr>
               ))}
@@ -234,6 +254,35 @@ function VistaConsultas() {
           </table>
         </div>
       </section>
+
+      <Modal
+        abierto={Boolean(consultaSeleccionada)}
+        onCerrar={() => setConsultaSeleccionada(null)}
+        titulo="Responder Consulta"
+        ancho={600}
+      >
+        {consultaSeleccionada && (
+          <form className="flex w-full flex-col gap-5 mt-4 text-left" onSubmit={handleEnviarRespuesta}>
+            <div className="rounded-xl border border-pizarra bg-tinta/80 p-4 flex flex-col gap-2">
+              <span className="text-xs font-mono uppercase text-niebla">Consulta original de {consultaSeleccionada.remitente}:</span>
+              <p className="text-sm text-papel italic m-0">"{consultaSeleccionada.mensaje}"</p>
+            </div>
+
+            <Campo 
+              etiqueta="Tu Respuesta" 
+              multilinea 
+              value={respuesta} 
+              onChange={(e) => setRespuesta(e.target.value)} 
+              placeholder="Escribí tu respuesta..." 
+            />
+
+            <div className="mt-6 flex gap-3 w-full">
+              <Boton type="button" variante="secundario" anchoCompleto onClick={() => setConsultaSeleccionada(null)}>Cancelar</Boton>
+              <Boton type="submit" color="fexx" anchoCompleto>Enviar Respuesta</Boton>
+            </div>
+          </form>
+        )}
+      </Modal>
     </>
   );
 }
