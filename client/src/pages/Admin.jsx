@@ -301,12 +301,17 @@ function VistaConsultas({ user }) {
         body: JSON.stringify({ respuesta: textoRespuesta })
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setConsultaSeleccionada(null);
         setTextoRespuesta('');
         cargarConsultas();
+      } else {
+        alert("Error al enviar respuesta: " + (data.mensaje || "Error en el servidor"));
       }
     } catch (err) {
+      alert("Error de conexión con el servidor al responder.");
       console.error("Error al responder consulta", err);
     }
   };
@@ -356,7 +361,12 @@ function VistaConsultas({ user }) {
             <h3 className="text-xl font-display font-bold text-fexx">Responder a {consultaSeleccionada.remitente}</h3>
             <p className="text-sm text-niebla m-0">Correo: {consultaSeleccionada.email}</p>
             
-            <form onSubmit={handleEnviarRespuesta} className="flex flex-col gap-4 mt-2">
+            <div className="rounded-xl border border-pizarra/60 bg-tinta/50 p-4 text-sm text-papel/90 my-1">
+              <span className="text-xs font-mono uppercase text-niebla block mb-1">Consulta recibida:</span>
+              <p className="m-0 italic break-words">"{consultaSeleccionada.mensaje || 'Sin mensaje'}"</p>
+            </div>
+
+            <form onSubmit={handleEnviarRespuesta} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-mono uppercase tracking-wider text-niebla">Tu respuesta</label>
                 <textarea 
