@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Boton, Chip, Modal, Campo } from '../components/ui';
-import { useAuth } from '../context/AuthContext';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+import { useAuth } from '../context/AuthContext'; // Importado para obtener el token del usuario logueado
+import {   
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,   
   Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 
 export default function Admin() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Obtenemos el usuario y su token
   const [vistaActiva, setVistaActiva] = useState('dashboard');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [proyectoEditando, setProyectoEditando] = useState(null); 
@@ -18,6 +18,7 @@ export default function Admin() {
     setModalAbierto(true);
   };
 
+  // Función para guardar o actualizar proyectos mandando el token y controlando errores
   const handleGuardarProyecto = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -51,7 +52,7 @@ export default function Admin() {
 
       if (res.ok) {
         setModalAbierto(false);
-        setTriggerRecargaProyectos(prev => prev + 1);
+        setTriggerRecargaProyectos(prev => prev + 1); // Refresca la tabla
       } else {
         alert("Error al guardar: " + (data.error || "Verificá los datos ingresados"));
         console.error("Error del servidor:", data);
@@ -270,7 +271,7 @@ function VistaProyectos({ abrirModal, user }) {
 function VistaConsultas({ user }) {
   const [consultas, setConsultas] = useState([]);
   const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
-  const [respuesta, setRespuesta] = useState('');
+  const [textoRespuesta, setTextoRespuesta] = useState('');
 
   const cargarConsultas = () => {
     if (!user?.token) return;
@@ -288,7 +289,7 @@ function VistaConsultas({ user }) {
 
   const handleEnviarRespuesta = async (e) => {
     e.preventDefault();
-    if (!respuesta.trim() || !consultaSeleccionada) return;
+    if (!textoRespuesta.trim() || !consultaSeleccionada) return;
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/consultas/${consultaSeleccionada.id}/responder`, {
@@ -297,12 +298,12 @@ function VistaConsultas({ user }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user?.token}`
         },
-        body: JSON.stringify({ respuesta })
+        body: JSON.stringify({ respuesta: textoRespuesta })
       });
 
       if (res.ok) {
         setConsultaSeleccionada(null);
-        setRespuesta('');
+        setTextoRespuesta('');
         cargarConsultas();
       }
     } catch (err) {
@@ -339,14 +340,7 @@ function VistaConsultas({ user }) {
                     {c.estado === 'Pendiente' ? <Chip tono="advertencia">Pendiente</Chip> : <Chip tono="exito">Respondida</Chip>}
                   </td>
                   <td className="py-4 text-right">
-                    <Boton 
-                      variante="secundario" 
-                      tamaño="md" 
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => setConsultaSeleccionada(c)}
-                    >
-                      Responder
-                    </Boton>
+                    <Boton variante="secundario" tamaño="md" onClick={() => setConsultaSeleccionada(c)}>Responder</Boton>
                   </td>
                 </tr>
               ))}
@@ -355,38 +349,36 @@ function VistaConsultas({ user }) {
         </div>
       </section>
 
-      <Modal
-        abierto={Boolean(consultaSeleccionada)}
-        onCerrar={() => setConsultaSeleccionada(null)}
-        titulo="Responder Consulta"
-        ancho={600}
-      >
-        {consultaSeleccionada && (
-          <form className="flex w-full flex-col gap-5 mt-4 text-left" onSubmit={handleEnviarRespuesta}>
-            <div className="rounded-xl border border-pizarra bg-tinta/80 p-4 flex flex-col gap-2">
-              <span className="text-xs font-mono uppercase text-niebla">Consulta original de {consultaSeleccionada.remitente}:</span>
-              <p className="text-sm text-papel italic m-0">"{consultaSeleccionada.mensaje}"</p>
-            </div>
-
-            <Campo 
-              etiqueta="Tu Respuesta" 
-              multilinea 
-              value={respuesta} 
-              onChange={(e) => setRespuesta(e.target.value)} 
-              placeholder="Escribí tu respuesta..." 
-            />
-
-            <div className="mt-6 flex gap-3 w-full">
-              <Boton type="button" variante="secundario" anchoCompleto onClick={() => setConsultaSeleccionada(null)}>Cancelar</Boton>
-              <Boton type="submit" color="fexx" anchoCompleto>Enviar Respuesta</Boton>
-            </div>
-          </form>
-        )}
-      </Modal>
+      {/* Modal para redactar la respuesta */}
+      {consultaSeleccionada && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-grafito border border-pizarra rounded-3xl p-6 sm:p-8 max-w-lg w-full flex flex-col gap-4 shadow-2xl">
+            <h3 className="text-xl font-display font-bold text-fexx">Responder a {consultaSeleccionada.remitente}</h3>
+            <p className="text-sm text-niebla m-0">Correo: {consultaSeleccionada.email}</p>
+            
+            <form onSubmit={handleEnviarRespuesta} className="flex flex-col gap-4 mt-2">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-mono uppercase tracking-wider text-niebla">Tu respuesta</label>
+                <textarea 
+                  rows="4"
+                  value={textoRespuesta}
+                  onChange={(e) => setTextoRespuesta(e.target.value)}
+                  placeholder="Escribí tu respuesta aquí..."
+                  className="w-full rounded-xl border border-pizarra bg-tinta p-3 text-papel text-sm focus:outline-none focus:border-fexx"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 justify-end mt-2">
+                <Boton variante="secundario" onClick={() => { setConsultaSeleccionada(null); setTextoRespuesta(''); }}>Cancelar</Boton>
+                <Boton type="submit" color="fexx">Enviar Respuesta</Boton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
 function VistaUsuarios({ user }) {
   const [usuarios, setUsuarios] = useState([]);
 

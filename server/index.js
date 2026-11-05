@@ -6,10 +6,29 @@ const cors = require('cors');
 const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const {enviarConsulta} = require('./mailer');
+const helmet = require('helmet');
+const { enviarConsulta, enviarRespuesta } = require('./mailer');
 const app = express();
-app.use(cors());
-app.use(express.json());
+// Seguridad básica: cabeceras de protección
+app.use(helmet());
+
+// CORS: solo el sitio publicado y el entorno local pueden leer las respuestas desde otro origen.
+// (Los pedidos del propio sitio publicado no dependen de esto.)
+const ORIGENES_PERMITIDOS = [
+  'https://lenguajesiv.vercel.app',
+  'http://localhost:5173',
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : [])
+];
+app.use(cors({
+  origin: (origin, callback) => callback(null, !origin || ORIGENES_PERMITIDOS.includes(origin))
+}));
+
+// Los pedidos no pueden pesar más de 20 kb (esto deberia alcanzar de sobra para los formularios)
+app.use(express.json({ limit: '20kb' }));
+
+if (!process.env.JWT_SECRET) {
+  console.error('FALTA JWT_SECRET: el registro y el login van a fallar.');
+}
 
 
 //Guardia(middleware): Exige un token válido
@@ -53,6 +72,15 @@ const COLUMNAS_PROYECTO = `id, titulo, descripcion,
   imagen_url AS "imagenUrl", demo_url AS "demoUrl", repo_url AS "repoUrl",
   tipo, autor, tecnologias, destacado`;
 
+
+// Acepta también los nombres que usa el panel (repositorio y demo)
+function normalizarBodyProyecto(body) {
+  const b = (body && typeof body === 'object' && !Array.isArray(body)) ? { ...body } : {};
+  if (b.repoUrl === undefined && b.repositorio !== undefined) b.repoUrl = b.repositorio;
+  if (b.demoUrl === undefined && b.demo !== undefined) b.demoUrl = b.demo;
+  return b;
+}
+
 // Valida y limpia los datos de un proyecto (sirve para crear y para editar)
 function validarProyecto (body) {
   const b = body || {};
@@ -94,6 +122,43 @@ function validarProyecto (body) {
     errores,
     datos: { titulo, descripcion, imagenUrl, demoUrl, repoUrl, tipo, autor, tecnologias, destacado }
   };
+}
+
+// Reglas que dependen de la base: autor válido y máximo 2 destacados por integrante
+async function reglasDeProyecto(d, idActual) {
+  const errores = {};
+  if (!d.autor) return errores;
+
+  // Proyecto de todo el equipo: es válido y no cuenta para el límite de destacados
+  if (d.autor.toLowerCase() === 'equipo') {
+    d.autor = 'Equipo';
+    return errores;
+  }
+
+  const r = await pool.query(
+    `SELECT alias FROM integrantes
+     WHERE lower($1::text) IN (lower(alias), lower(nombre), lower(nombre_corto))`,
+    [d.autor]
+  );
+  if (r.rows.length === 0) {
+    errores.autor = 'Elegí un integrante del equipo (Fexx, Ssanty, Ultronzi o Rojo) o "Equipo".';
+    return errores;
+  }
+
+  d.autor = r.rows[0].alias; // se guarda siempre con el alias exacto
+  if (d.destacado) {
+    const c = await pool.query(
+      `SELECT COUNT(*)::int AS n
+       FROM proyectos
+       WHERE activo = true AND destacado = true
+         AND lower(autor) = lower($1::text) AND id <> $2`,
+      [d.autor, idActual]
+    );
+    if (c.rows[0].n >= 2) {
+      errores.destacado = 'Cada integrante puede tener como máximo 2 proyectos destacados.';
+    }
+  }
+  return errores;
 }
 
 app.get('/api/projects', async (req, res) => {
@@ -193,8 +258,12 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ mensaje: 'Email o contraseña incorrectos.' });
     }
 
-    pool.query('INSERT INTO logins (usuario_id, proveedor) VALUES ($1, $2)', [u.id, 'email'])
-        .catch((err) => console.error('No se pudo guardar el login:', err.message));
+    // 4. Guardar el login para las métricas (si falla, no bloquea el ingreso)
+    try {
+      await pool.query('INSERT INTO logins (usuario_id, proveedor) VALUES ($1, $2)', [u.id, 'email']);
+    } catch (err) {
+      console.error('No se pudo guardar el login:', err.message);
+    }
 
     const user = {id: u.id, name: u.nombre, email: u.email, role: u.rol};
     const token = jwt.sign({id: u.id, role: u.rol}, process.env.JWT_SECRET, { expiresIn: '2h' });
@@ -267,6 +336,31 @@ app.get('/api/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// Eliminar un usuario (admin)
+app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+    if (id === req.user.id) {
+      return res.status(400).json({ mensaje: 'No podés eliminar tu propia cuenta.' });
+    }
+
+    const buscado = await pool.query('SELECT rol FROM usuarios WHERE id = $1', [id]);
+    if (buscado.rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+    }
+    if (buscado.rows[0].rol === 'admin') {
+      return res.status(403).json({ mensaje: 'No se pueden eliminar administradores desde el panel.' });
+    }
+
+    await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al eliminar el usuario:', error.message);
+    res.status(500).json({ mensaje: 'Error al eliminar el usuario' });
+  }
+});
+
 // Registrar una visita (público; si viene con token, se asocia al usuario)
 app.post('/api/visits', optionalAuth, async (req, res) => {
   try {
@@ -288,8 +382,8 @@ app.post('/api/visits', optionalAuth, async (req, res) => {
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-// Métricas del dashboard (por ahora abierta; se cierra a admin cuando el panel mande el token)
-app.get('/api/metrics', async (req, res) => {
+// Métricas del dashboard 
+app.get('/api/metrics', requireAuth, requireAdmin, async (req, res) => {
   try {
     const [totales, evolucion, origen, perfiles] = await Promise.all([
       pool.query(
@@ -340,10 +434,15 @@ app.get('/api/metrics', async (req, res) => {
 // Crear proyecto (admin)
 app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { errores, datos: d } = validarProyecto(req.body);
+    const { errores, datos: d } = validarProyecto(normalizarBodyProyecto(req.body));
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
     }
+    const erroresBD = await reglasDeProyecto(d, 0);
+    if (Object.keys(erroresBD).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores: erroresBD });
+    }
+
     const r = await pool.query(
       `INSERT INTO proyectos
          (titulo, descripcion, imagen_url, demo_url, repo_url, tipo, autor, tecnologias, destacado)
@@ -358,15 +457,26 @@ app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-//Editar proyecto (Admin) (reemplaza los datos editables)
+// Editar proyecto (admin): los campos que no se mandan se conservan
 app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
 
-    const {errores, datos: d} = validarProyecto(req.body);
+    const actual = await pool.query(
+      `SELECT ${COLUMNAS_PROYECTO} FROM proyectos WHERE id = $1 AND activo = true`,
+      [id]
+    );
+    if (actual.rows.length === 0) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+
+    const { errores, datos: d } = validarProyecto({ ...actual.rows[0], ...normalizarBodyProyecto(req.body) });
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    
+    const erroresBD = await reglasDeProyecto(d, id);
+    if (Object.keys(erroresBD).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores: erroresBD });
     }
 
     const r = await pool.query(
@@ -377,9 +487,7 @@ app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
        RETURNING ${COLUMNAS_PROYECTO}`,
       [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado, id]
     );
-
-    if (r.rows.length === 0 ) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
-
+    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
     res.json(r.rows[0]);
 
   } catch (error) {
@@ -457,6 +565,202 @@ app.post('/api/contact', async (req, res) => {
     console.error('Error al guardar la consulta:', error.message);
     res.status(500).json({ mensaje: 'Error al enviar la consulta' });
   }
+});
+
+const ETIQUETA_TIPO = { general: 'General', cotizacion: 'Cotización', asesoria: 'Asesoría' };
+
+// Listar consultas (admin) con las pendientes primero
+app.get('/api/consultas', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, nombre, email, tipo, mensaje, estado, respuesta,
+              to_char(creado_en AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Salta', 'DD/MM/YYYY') AS fecha
+       FROM consultas
+       ORDER BY (estado = 'pendiente') DESC, creado_en DESC`
+    );
+    res.json(r.rows.map((c) => ({
+      id: c.id,
+      remitente: c.nombre,
+      email: c.email,
+      tipo: ETIQUETA_TIPO[c.tipo] || c.tipo,
+      estado: c.estado === 'pendiente' ? 'Pendiente' : 'Respondida',
+      fecha: c.fecha,
+      mensaje: c.mensaje,
+      respuesta: c.respuesta
+    })));
+  } catch (error) {
+    console.error('Error al listar consultas:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener las consultas' });
+  }
+});
+
+// Responder una consulta por email (admin)
+app.post('/api/consultas/:id/responder', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const { respuesta } = req.body || {};
+    const texto = typeof respuesta === 'string' ? respuesta.trim() : '';
+    if (texto.length < 2 || texto.length > 5000) {
+      return res.status(400).json({
+        mensaje: 'Revisá los datos',
+        errores: { respuesta: 'La respuesta debe tener entre 2 y 5000 caracteres.' }
+      });
+    }
+
+    const buscada = await pool.query('SELECT nombre, email, mensaje FROM consultas WHERE id = $1', [id]);
+    const c = buscada.rows[0];
+    if (!c) return res.status(404).json({ mensaje: 'Consulta no encontrada.' });
+
+    // Primero el email: si falla, la consulta sigue pendiente
+    try {
+      await enviarRespuesta({ para: c.email, nombre: c.nombre, respuesta: texto, mensajeOriginal: c.mensaje });
+    } catch (err) {
+      console.error('No se pudo enviar la respuesta:', err.message);
+      return res.status(502).json({ mensaje: 'No se pudo enviar el email. La consulta sigue pendiente.' });
+    }
+
+    await pool.query(
+      "UPDATE consultas SET respuesta = $1, estado = 'respondida' WHERE id = $2",
+      [texto, id]
+    );
+    res.json({ id, estado: 'Respondida', respuesta: texto });
+  } catch (error) {
+    console.error('Error al responder la consulta:', error.message);
+    res.status(500).json({ mensaje: 'Error al responder la consulta' });
+  }
+});
+
+// Valida y limpia los datos de un servicio (sirve para crear y para editar)
+function validarServicio(body) {
+  const b = body || {};
+  const errores = {};
+  const texto = (v) => (typeof v === 'string' ? v.trim() : '');
+
+  const titulo = texto(b.titulo);
+  if (titulo.length < 2 || titulo.length > 150) {
+    errores.titulo = 'El título debe tener entre 2 y 150 caracteres.';
+  }
+
+  const descripcion = texto(b.descripcion) || null;
+  if (descripcion && descripcion.length > 2000) {
+    errores.descripcion = 'La descripción es demasiado larga.';
+  }
+
+  let precioDesde = null;
+  const crudo = b.precioDesde;
+  if (crudo !== undefined && crudo !== null && crudo !== '') {
+    const n = (typeof crudo === 'number' || typeof crudo === 'string') ? Number(crudo) : NaN;
+    if (!Number.isFinite(n) || n < 0 || n > 99999999.99) {
+      errores.precioDesde = 'Ingresá un precio válido (un número mayor o igual a 0).';
+    } else {
+      precioDesde = Math.round(n * 100) / 100;
+    }
+  }
+
+  return { errores, datos: { titulo, descripcion, precioDesde } };
+}
+
+// PostgreSQL devuelve los NUMERIC como texto, asi que lo pasamos a número
+const aServicio = (r) => ({
+  id: r.id,
+  titulo: r.titulo,
+  descripcion: r.descripcion,
+  precioDesde: r.precio_desde === null ? null : Number(r.precio_desde)
+});
+
+// Lista pública de servicios activos
+app.get('/api/services', async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT id, titulo, descripcion, precio_desde FROM servicios WHERE activo = true ORDER BY id'
+    );
+    res.json(r.rows.map(aServicio));
+  } catch (error) {
+    console.error('Error al obtener servicios:', error.message);
+    res.status(500).json({ mensaje: 'Error al obtener los servicios' });
+  }
+});
+
+// Crear servicio (admin)
+app.post('/api/services', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { errores, datos: d } = validarServicio(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    const r = await pool.query(
+      `INSERT INTO servicios (titulo, descripcion, precio_desde)
+       VALUES ($1, $2, $3)
+       RETURNING id, titulo, descripcion, precio_desde`,
+      [d.titulo, d.descripcion, d.precioDesde]
+    );
+    res.status(201).json(aServicio(r.rows[0]));
+  } catch (error) {
+    console.error('Error al crear servicio:', error.message);
+    res.status(500).json({ mensaje: 'Error al crear el servicio' });
+  }
+});
+
+// Editar servicio (admin): reemplaza los datos editables
+app.put('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const { errores, datos: d } = validarServicio(req.body);
+    if (Object.keys(errores).length > 0) {
+      return res.status(400).json({ mensaje: 'Revisá los datos', errores });
+    }
+    const r = await pool.query(
+      `UPDATE servicios
+       SET titulo = $1, descripcion = $2, precio_desde = $3
+       WHERE id = $4 AND activo = true
+       RETURNING id, titulo, descripcion, precio_desde`,
+      [d.titulo, d.descripcion, d.precioDesde, id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Servicio no encontrado.' });
+    res.json(aServicio(r.rows[0]));
+  } catch (error) {
+    console.error('Error al editar servicio:', error.message);
+    res.status(500).json({ mensaje: 'Error al editar el servicio' });
+  }
+});
+
+// Dar de baja un servicio (admin): no se borra, se oculta
+app.delete('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
+
+    const r = await pool.query(
+      'UPDATE servicios SET activo = false WHERE id = $1 AND activo = true RETURNING id',
+      [id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Servicio no encontrado.' });
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error al dar de baja el servicio:', error.message);
+    res.status(500).json({ mensaje: 'Error al dar de baja el servicio' });
+  }
+});
+
+// Rutas /api que no existen
+app.use('/api', (req, res) => {
+  res.status(404).json({ mensaje: 'Ruta no encontrada.' });
+});
+
+// Errores no controlados: siempre responden JSON
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ mensaje: 'El pedido es demasiado grande.' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ mensaje: 'El cuerpo del pedido no es un JSON válido.' });
+  }
+  console.error('Error inesperado:', err.message);
+  res.status(500).json({ mensaje: 'Error inesperado del servidor' });
 });
 
 const PORT = process.env.PORT || 3000;
