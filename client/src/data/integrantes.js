@@ -16,6 +16,7 @@ export const integrantes = [
     bio: 'Me gusta convertir datos en paneles claros y fáciles de leer. En el equipo me ocupo del panel de administración, las métricas y que todo llegue andando a producción.',
     chips: ['Dashboards', 'Chart.js', 'CI/CD'],
     foto: '/fotos/ezequiel-silvera.webp',
+    cvPdf: '/cv/ezequiel-silvera.pdf',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'ezequiel.silvera.sandoval@gmail.com',
@@ -185,6 +186,7 @@ export const integrantes = [
     bio: 'Me ocupo de lo que no se ve: la base de datos, la API y la seguridad. Me gusta que los datos estén ordenados y que cada consulta sea rápida y segura.',
     chips: ['Node + Express', 'JWT', 'SQL'],
     foto: '/fotos/gonzalo-luna.webp',
+    cvPdf: '/cv/gonzalo-luna.pdf',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'gonchylaluna@gmail.com',
@@ -268,6 +270,7 @@ export const integrantes = [
     bio: 'Diseño y animo interfaces que se sientan vivas sin cansar la vista. En el equipo me encargo de la identidad visual, el sistema de diseño y las animaciones.',
     chips: ['GSAP', 'Lottie', 'Tailwind'],
     foto: '/fotos/juan-quinteros.webp',
+    cvPdf: '/cv/juan-quinteros.pdf',
     ciudad: 'Salta, Argentina',
     contacto: {
       email: 'ignirq2006@gmail.com',
