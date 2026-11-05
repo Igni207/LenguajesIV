@@ -6,29 +6,10 @@ const cors = require('cors');
 const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const helmet = require('helmet');
 const { enviarConsulta, enviarRespuesta } = require('./mailer');
 const app = express();
-// Seguridad básica: cabeceras de protección
-app.use(helmet());
-
-// CORS: solo el sitio publicado y el entorno local pueden leer las respuestas desde otro origen.
-// (Los pedidos del propio sitio publicado no dependen de esto.)
-const ORIGENES_PERMITIDOS = [
-  'https://lenguajesiv.vercel.app',
-  'http://localhost:5173',
-  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : [])
-];
-app.use(cors({
-  origin: (origin, callback) => callback(null, !origin || ORIGENES_PERMITIDOS.includes(origin))
-}));
-
-// Los pedidos no pueden pesar más de 20 kb (esto deberia alcanzar de sobra para los formularios)
-app.use(express.json({ limit: '20kb' }));
-
-if (!process.env.JWT_SECRET) {
-  console.error('FALTA JWT_SECRET: el registro y el login van a fallar.');
-}
+app.use(cors());
+app.use(express.json());
 
 
 //Guardia(middleware): Exige un token válido
@@ -71,15 +52,6 @@ function optionalAuth(req, res, next) {
 const COLUMNAS_PROYECTO = `id, titulo, descripcion,
   imagen_url AS "imagenUrl", demo_url AS "demoUrl", repo_url AS "repoUrl",
   tipo, autor, tecnologias, destacado`;
-
-
-// Acepta también los nombres que usa el panel (repositorio y demo)
-function normalizarBodyProyecto(body) {
-  const b = (body && typeof body === 'object' && !Array.isArray(body)) ? { ...body } : {};
-  if (b.repoUrl === undefined && b.repositorio !== undefined) b.repoUrl = b.repositorio;
-  if (b.demoUrl === undefined && b.demo !== undefined) b.demoUrl = b.demo;
-  return b;
-}
 
 // Valida y limpia los datos de un proyecto (sirve para crear y para editar)
 function validarProyecto (body) {
@@ -382,8 +354,8 @@ app.post('/api/visits', optionalAuth, async (req, res) => {
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-// Métricas del dashboard 
-app.get('/api/metrics', requireAuth, requireAdmin, async (req, res) => {
+// Métricas del dashboard (por ahora abierta; se cierra a admin cuando el panel mande el token)
+app.get('/api/metrics', async (req, res) => {
   try {
     const [totales, evolucion, origen, perfiles] = await Promise.all([
       pool.query(
@@ -434,7 +406,7 @@ app.get('/api/metrics', requireAuth, requireAdmin, async (req, res) => {
 // Crear proyecto (admin)
 app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { errores, datos: d } = validarProyecto(normalizarBodyProyecto(req.body));
+    const { errores, datos: d } = validarProyecto(req.body);
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
     }
@@ -457,23 +429,17 @@ app.post('/api/projects', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Editar proyecto (admin): los campos que no se mandan se conservan
+//Editar proyecto (Admin) (reemplaza los datos editables)
 app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ mensaje: 'Id inválido.' });
 
-    const actual = await pool.query(
-      `SELECT ${COLUMNAS_PROYECTO} FROM proyectos WHERE id = $1 AND activo = true`,
-      [id]
-    );
-    if (actual.rows.length === 0) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
-
-    const { errores, datos: d } = validarProyecto({ ...actual.rows[0], ...normalizarBodyProyecto(req.body) });
+    const {errores, datos: d} = validarProyecto(req.body);
     if (Object.keys(errores).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores });
     }
-    
+
     const erroresBD = await reglasDeProyecto(d, id);
     if (Object.keys(erroresBD).length > 0) {
       return res.status(400).json({ mensaje: 'Revisá los datos', errores: erroresBD });
@@ -487,7 +453,9 @@ app.put('/api/projects/:id', requireAuth, requireAdmin, async (req, res) => {
        RETURNING ${COLUMNAS_PROYECTO}`,
       [d.titulo, d.descripcion, d.imagenUrl, d.demoUrl, d.repoUrl, d.tipo, d.autor, d.tecnologias, d.destacado, id]
     );
-    if (r.rows.length === 0) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+
+    if (r.rows.length === 0 ) return res.status(404).json({ mensaje: 'Proyecto no encontrado.' });
+
     res.json(r.rows[0]);
 
   } catch (error) {
@@ -744,23 +712,6 @@ app.delete('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
     console.error('Error al dar de baja el servicio:', error.message);
     res.status(500).json({ mensaje: 'Error al dar de baja el servicio' });
   }
-});
-
-// Rutas /api que no existen
-app.use('/api', (req, res) => {
-  res.status(404).json({ mensaje: 'Ruta no encontrada.' });
-});
-
-// Errores no controlados: siempre responden JSON
-app.use((err, req, res, next) => {
-  if (err.type === 'entity.too.large') {
-    return res.status(413).json({ mensaje: 'El pedido es demasiado grande.' });
-  }
-  if (err.type === 'entity.parse.failed') {
-    return res.status(400).json({ mensaje: 'El cuerpo del pedido no es un JSON válido.' });
-  }
-  console.error('Error inesperado:', err.message);
-  res.status(500).json({ mensaje: 'Error inesperado del servidor' });
 });
 
 const PORT = process.env.PORT || 3000;
