@@ -441,6 +441,7 @@ function VistaUsuarios({ user }) {
     </>
   );
 }
+
 function TarjetaMetrica({ titulo, valor, color }) {
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-pizarra bg-grafito p-6 transition-transform hover:-translate-y-1 hover:shadow-lg hover:shadow-fexx/5 cursor-default">
@@ -448,4 +449,5 @@ function TarjetaMetrica({ titulo, valor, color }) {
       <span className={`text-5xl font-bold font-mono ${color}`}>{valor}</span>
     </div>
   );
+  
 }

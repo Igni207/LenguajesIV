@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import TrackVisits from './components/TrackVisits';
 import Inicio from './pages/Inicio';
 import GuiaDeEstilo from './pages/GuiaDeEstilo';
 import NoEncontrada from './pages/NoEncontrada';
