@@ -1,24 +1,71 @@
 import { useState, useEffect } from 'react';
-import { Boton, Chip, Modal, Campo } from '../components/ui';
-import { useAuth } from '../context/AuthContext'; // Importado para obtener el token del usuario logueado
-import {   
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,   
+import { Boton, Chip, Modal, Campo, useToast } from '../components/ui';
+import { useAuth } from '../context/AuthContext';
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 
+// Si VITE_API_URL no está definida, se usan rutas relativas (/api/...):
+// en desarrollo las atiende el proxy de Vite y en producción el rewrite de Vercel.
+const API = import.meta.env.VITE_API_URL || '';
+
+// Texto para mostrar cuando algo falla: el mensaje del servidor, nunca la respuesta completa.
+function mensajeDeError(data, porDefecto) {
+  const detalle = data?.errores ? Object.values(data.errores)[0] : data?.mensaje;
+  return detalle || porDefecto;
+}
+
+// Pide una lista al servidor. Si algo falla devuelve [] sin escribir nada en la consola.
+async function pedirLista(url, token) {
+  try {
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function Admin() {
-  const { user } = useAuth(); // Obtenemos el usuario y su token
+  const { user } = useAuth();
+  const { mostrar } = useToast();
   const [vistaActiva, setVistaActiva] = useState('dashboard');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [proyectoEditando, setProyectoEditando] = useState(null); 
   const [triggerRecargaProyectos, setTriggerRecargaProyectos] = useState(0);
 
-  const handleAbrirModal = (proyecto = null) => {
-    setProyectoEditando(proyecto);
-    setModalAbierto(true);
+  const handleAbrirModal = async (proyecto = null) => {
+    if (!proyecto) {
+      setProyectoEditando(null);
+      setModalAbierto(true);
+      return;
+    }
+    // La lista viene resumida (sin tecnologías ni URLs): pedimos la ficha completa
+    // para precargar todos los campos y que no se borren al guardar.
+    try {
+      const res = await fetch(`${API}/api/projects/${proyecto.id}`, {
+        headers: { 'Authorization': `Bearer ${user?.token}` }
+      });
+      if (!res.ok) throw new Error('ficha no disponible');
+      const ficha = await res.json();
+      setProyectoEditando({
+        ...proyecto,
+        tecnologias: ficha.tecnologias ?? '',
+        repositorio: ficha.repoUrl ?? '',
+        demo: ficha.demoUrl ?? ''
+      });
+      setModalAbierto(true);
+    } catch {
+      mostrar({
+        tipo: 'error',
+        titulo: 'No se pudo abrir el proyecto',
+        mensaje: 'No se pudieron cargar sus datos completos. Intentá de nuevo.'
+      });
+    }
   };
 
-  // Función para guardar o actualizar proyectos mandando el token y controlando errores
   const handleGuardarProyecto = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -34,8 +81,8 @@ export default function Admin() {
 
     const esEdicion = Boolean(proyectoEditando?.id);
     const url = esEdicion 
-      ? `${import.meta.env.VITE_API_URL}/api/projects/${proyectoEditando.id}`
-      : `${import.meta.env.VITE_API_URL}/api/projects`;
+      ? `${API}/api/projects/${proyectoEditando.id}`
+      : `${API}/api/projects`;
     const method = esEdicion ? 'PUT' : 'POST';
 
     try {
@@ -52,14 +99,20 @@ export default function Admin() {
 
       if (res.ok) {
         setModalAbierto(false);
-        setTriggerRecargaProyectos(prev => prev + 1); // Refresca la tabla
+        setTriggerRecargaProyectos(prev => prev + 1);
       } else {
-        alert("Error al guardar: " + (data.error || "Verificá los datos ingresados"));
-        console.error("Error del servidor:", data);
+        mostrar({
+          tipo: 'error',
+          titulo: 'No se pudo guardar',
+          mensaje: mensajeDeError(data, 'Revisá los datos ingresados.')
+        });
       }
-    } catch (err) {
-      alert("Error de red al intentar conectar con el servidor.");
-      console.error("Error de red al guardar proyecto", err);
+    } catch {
+      mostrar({
+        tipo: 'error',
+        titulo: 'Sin conexión',
+        mensaje: 'No se pudo conectar con el servidor.'
+      });
     }
   };
 
@@ -129,82 +182,114 @@ function VistaDashboard({ user }) {
   const [datosOrigen, setDatosOrigen] = useState([]);
   const [cargando, setCargando] = useState(true);
 
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+
   useEffect(() => {
     if (!user?.token) return;
-    fetch(`${import.meta.env.VITE_API_URL}/api/metrics`, {
+    setCargando(true);
+
+    let url = `${API}/api/metrics`;
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('inicio', fechaInicio);
+    if (fechaFin) params.append('fin', fechaFin);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    fetch(url, {
       headers: { 'Authorization': `Bearer ${user.token}` }
     })
-      .then(res => res.json())
+      .then(res => (res.ok ? res.json() : null))
       .then(data => {
-        setMetricas(data.totales || { visitas: 0, usuarios: 0, consultas: 0 });
-        setDatosEvolucion(data.evolucion || []);
-        setDatosOrigen(data.origen || []);
+        // Si el servidor responde con un error, se conservan los valores por defecto
+        if (data) {
+          setMetricas(data.totales || { visitas: 0, usuarios: 0, consultas: 0 });
+          setDatosEvolucion(data.evolucion || []);
+          setDatosOrigen(data.origen || []);
+        }
         setCargando(false);
       })
-      .catch(err => console.error("error al traer metricas - fexx", err));
-  }, [user]);
-
-  if (cargando) return <div className="text-niebla animate-pulse">cargando métricas...</div>;
+      .catch(() => setCargando(false));
+  }, [user, fechaInicio, fechaFin]);
 
   return (
     <>
-      <h1 className="text-3xl font-display font-bold text-fexx mb-8">Dashboard de Métricas</h1>
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <TarjetaMetrica titulo="Visitas Totales" valor={metricas.visitas} color="text-fexx" />
-        <TarjetaMetrica titulo="Usuarios Registrados" valor={metricas.usuarios} color="text-ssanty" />
-        <TarjetaMetrica titulo="Consultas Pendientes" valor={metricas.consultas} color="text-rojo" />
-      </section>
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 rounded-3xl border border-pizarra bg-grafito/50 p-6 sm:p-8">
-          <h3 className="m-0 font-mono text-[13px] font-medium uppercase tracking-[0.08em] text-niebla mb-6">Evolución de Tráfico (Últimos 7 días)</h3>
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={datosEvolucion} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#3a3f52" vertical={false} />
-                <XAxis dataKey="dia" stroke="#9ba1b3" fontSize={13} tickLine={false} axisLine={false} />
-                <YAxis stroke="#9ba1b3" fontSize={13} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#161923', borderColor: '#3a3f52', borderRadius: '8px', color: '#eeebe4' }} itemStyle={{ fontWeight: 'bold' }} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }} />
-                <Line type="monotone" name="Visitas" dataKey="visitas" stroke="#7C9CE4" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
-                <Line type="monotone" name="Usuarios" dataKey="usuarios" stroke="#C29FE6" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+        <h1 className="text-3xl font-display font-bold text-fexx m-0">Dashboard de Métricas</h1>
+        
+        <div className="flex flex-wrap items-end gap-3 bg-grafito p-3 rounded-2xl border border-pizarra">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-mono uppercase text-niebla">Desde</label>
+            <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="bg-tinta border border-pizarra text-papel rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-fexx" />
           </div>
-        </div>
-        <div className="rounded-3xl border border-pizarra bg-grafito/50 p-6 sm:p-8 flex flex-col">
-          <h3 className="m-0 font-mono text-[13px] font-medium uppercase tracking-[0.08em] text-niebla mb-6">Origen del Registro</h3>
-          <div className="h-72 w-full flex-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={datosOrigen} margin={{ top: 5, right: 0, bottom: 5, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#3a3f52" vertical={false} />
-                <XAxis dataKey="origen" stroke="#9ba1b3" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#9ba1b3" fontSize={13} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{ fill: '#20242f' }} contentStyle={{ backgroundColor: '#161923', borderColor: '#3a3f52', borderRadius: '8px', color: '#eeebe4' }} />
-                <Bar dataKey="cantidad" name="Registros" fill="#B6D76E" radius={[4, 4, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-mono uppercase text-niebla">Hasta</label>
+            <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="bg-tinta border border-pizarra text-papel rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-fexx" />
           </div>
+          {(fechaInicio || fechaFin) && (
+            <Boton variante="fantasma" color="niebla" tamaño="sm" onClick={() => {setFechaInicio(''); setFechaFin('');}}>Limpiar</Boton>
+          )}
         </div>
-      </section>
+      </div>
+
+      {cargando ? (
+        <div className="text-niebla animate-pulse">cargando métricas...</div>
+      ) : (
+        <>
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <TarjetaMetrica titulo="Visitas Totales" valor={metricas.visitas} color="text-fexx" />
+            <TarjetaMetrica titulo="Usuarios Registrados" valor={metricas.usuarios} color="text-ssanty" />
+            <TarjetaMetrica titulo="Consultas Pendientes" valor={metricas.consultas} color="text-rojo" />
+          </section>
+          
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2 rounded-3xl border border-pizarra bg-grafito/50 p-6 sm:p-8">
+              <h3 className="m-0 font-mono text-[13px] font-medium uppercase tracking-[0.08em] text-niebla mb-6">
+                {fechaInicio || fechaFin ? 'Evolución de Tráfico (Período Seleccionado)' : 'Evolución de Tráfico (Últimos 7 días)'}
+              </h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={datosEvolucion} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#3a3f52" vertical={false} />
+                    <XAxis dataKey="dia" stroke="#9ba1b3" fontSize={13} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#9ba1b3" fontSize={13} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#161923', borderColor: '#3a3f52', borderRadius: '8px', color: '#eeebe4' }} itemStyle={{ fontWeight: 'bold' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '14px', paddingTop: '10px' }} />
+                    <Line type="monotone" name="Visitas" dataKey="visitas" stroke="#7C9CE4" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
+                    <Line type="monotone" name="Usuarios" dataKey="usuarios" stroke="#C29FE6" strokeWidth={3} activeDot={{ r: 6 }} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-pizarra bg-grafito/50 p-6 sm:p-8 flex flex-col">
+              <h3 className="m-0 font-mono text-[13px] font-medium uppercase tracking-[0.08em] text-niebla mb-6">Origen del Registro</h3>
+              <div className="h-72 w-full flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={datosOrigen} margin={{ top: 5, right: 0, bottom: 5, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#3a3f52" vertical={false} />
+                    <XAxis dataKey="origen" stroke="#9ba1b3" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#9ba1b3" fontSize={13} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: '#20242f' }} contentStyle={{ backgroundColor: '#161923', borderColor: '#3a3f52', borderRadius: '8px', color: '#eeebe4' }} />
+                    <Bar dataKey="cantidad" name="Registros" fill="#B6D76E" radius={[4, 4, 0, 0]} barSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </>
   );
 }
 
 function VistaProyectos({ abrirModal, user }) {
+  const { mostrar } = useToast();
   const [proyectos, setProyectos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  const cargarProyectos = () => {
+  const cargarProyectos = async () => {
     if (!user?.token) return;
-    fetch(`${import.meta.env.VITE_API_URL}/api/projects`, {
-      headers: { 'Authorization': `Bearer ${user.token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setProyectos(data);
-        setCargando(false);
-      })
-      .catch(err => console.error("error al traer proyectos - fexx", err));
+    setProyectos(await pedirLista(`${API}/api/projects`, user.token));
+    setCargando(false);
   };
 
   useEffect(() => {
@@ -214,13 +299,22 @@ function VistaProyectos({ abrirModal, user }) {
   const handleEliminarProyecto = async (id) => {
     if (!window.confirm("¿Seguro querés eliminar este proyecto?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}`, {
+      const res = await fetch(`${API}/api/projects/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${user?.token}` }
       });
-      if (res.ok) cargarProyectos();
-    } catch (err) {
-      console.error("Error al eliminar proyecto", err);
+      if (res.ok) {
+        cargarProyectos();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        mostrar({
+          tipo: 'error',
+          titulo: 'No se pudo dar de baja',
+          mensaje: mensajeDeError(data, 'Intentá de nuevo.')
+        });
+      }
+    } catch {
+      mostrar({ tipo: 'error', titulo: 'Sin conexión', mensaje: 'No se pudo conectar con el servidor.' });
     }
   };
 
@@ -269,18 +363,19 @@ function VistaProyectos({ abrirModal, user }) {
 }
 
 function VistaConsultas({ user }) {
+  const { mostrar } = useToast();
   const [consultas, setConsultas] = useState([]);
   const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
   const [textoRespuesta, setTextoRespuesta] = useState('');
+  
+  // Estados para los filtros
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [tipoSeleccionado, setTipoSeleccionado] = useState('TODOS'); // 'TODOS' por defecto
 
-  const cargarConsultas = () => {
+  const cargarConsultas = async () => {
     if (!user?.token) return;
-    fetch(`${import.meta.env.VITE_API_URL}/api/consultas`, {
-      headers: { 'Authorization': `Bearer ${user.token}` }
-    })
-      .then(res => res.json())
-      .then(data => setConsultas(data))
-      .catch(err => console.error("Error al traer consultas", err));
+    setConsultas(await pedirLista(`${API}/api/consultas`, user.token));
   };
 
   useEffect(() => {
@@ -292,7 +387,7 @@ function VistaConsultas({ user }) {
     if (!textoRespuesta.trim() || !consultaSeleccionada) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/consultas/${consultaSeleccionada.id}/responder`, {
+      const res = await fetch(`${API}/api/consultas/${consultaSeleccionada.id}/responder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -308,19 +403,90 @@ function VistaConsultas({ user }) {
         setTextoRespuesta('');
         cargarConsultas();
       } else {
-        alert("Error al enviar respuesta: " + (data.mensaje || "Error en el servidor"));
+        mostrar({
+          tipo: 'error',
+          titulo: 'No se pudo enviar la respuesta',
+          mensaje: mensajeDeError(data, 'Intentá de nuevo.')
+        });
       }
-    } catch (err) {
-      alert("Error de conexión con el servidor al responder.");
-      console.error("Error al responder consulta", err);
+    } catch {
+      mostrar({ tipo: 'error', titulo: 'Sin conexión', mensaje: 'No se pudo conectar con el servidor.' });
     }
   };
+
+  // Lógica de filtrado combinando tipo y fechas
+  const consultasFiltradas = consultas.filter(c => {
+    // 1. Filtro por tipo exacto (si no es 'TODOS', comparamos)
+    if (tipoSeleccionado !== 'TODOS' && c.tipo !== tipoSeleccionado) {
+      return false;
+    }
+
+    // 2. Filtro por rango de fechas
+    if (!fechaInicio && !fechaFin) return true;
+    
+    const [dia, mes, anio] = c.fecha.split('/');
+    const fechaConsulta = new Date(anio, mes - 1, dia);
+    
+    const inicio = fechaInicio ? new Date(fechaInicio + 'T00:00:00') : null;
+    const fin = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
+
+    if (inicio && fechaConsulta < inicio) return false;
+    if (fin && fechaConsulta > fin) return false;
+    
+    return true;
+  });
 
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Consultas Pendientes</h1>
-      <section className="flex flex-col gap-5 rounded-3xl border border-pizarra bg-grafito/50 p-6 sm:p-8">
-        <h3 className="m-0 font-mono text-[13px] font-medium uppercase tracking-[0.08em] text-niebla">Bandeja de Entrada</h3>
+      
+      <section className="flex flex-col gap-6 rounded-3xl border border-pizarra bg-grafito/50 p-6 sm:p-8">
+        <div className="flex flex-col gap-4">
+          <h3 className="m-0 font-mono text-[13px] font-medium uppercase tracking-[0.08em] text-niebla">Bandeja de Entrada</h3>
+          
+          {/* Botones de selección rápida por Tipo */}
+          <div className="flex flex-wrap gap-2">
+            {['TODOS', 'Consulta general', 'Cotizacion del proyecto', 'Asesoria tecnica'].map((tipo) => {
+              const activo = tipoSeleccionado === tipo;
+              // Mapeamos un texto amigable para mostrar en el botón
+              let label = tipo;
+              if (tipo === 'TODOS') label = 'Todos';
+              
+              return (
+                <button
+                  key={tipo}
+                  onClick={() => setTipoSeleccionado(tipo)}
+                  className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all border ${
+                    activo 
+                      ? 'bg-fexx text-tinta border-fexx font-bold shadow-lg shadow-fexx/20' 
+                      : 'bg-tinta text-niebla border-pizarra hover:text-papel hover:border-niebla'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selector de Fechas y Limpieza */}
+          <div className="flex flex-wrap items-end justify-between gap-3 bg-tinta p-3 rounded-2xl border border-pizarra">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-mono uppercase text-niebla">Desde</label>
+                <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="bg-grafito border border-pizarra text-papel rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-fexx" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-mono uppercase text-niebla">Hasta</label>
+                <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="bg-grafito border border-pizarra text-papel rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-fexx" />
+              </div>
+            </div>
+
+            {(fechaInicio || fechaFin || tipoSeleccionado !== 'TODOS') && (
+              <Boton variante="fantasma" color="niebla" tamaño="sm" onClick={() => {setFechaInicio(''); setFechaFin(''); setTipoSeleccionado('TODOS');}}>Restablecer Filtros</Boton>
+            )}
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm table-fixed">
             <thead className="border-b border-pizarra text-niebla">
@@ -333,7 +499,7 @@ function VistaConsultas({ user }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-pizarra/50">
-              {consultas.map((c) => (
+              {consultasFiltradas.length > 0 ? consultasFiltradas.map((c) => (
                 <tr key={c.id} className="transition-colors hover:bg-grafito group">
                   <td className="py-4 font-semibold flex flex-col pr-4">
                     <span>{c.remitente}</span>
@@ -348,7 +514,11 @@ function VistaConsultas({ user }) {
                     <Boton variante="secundario" tamaño="md" onClick={() => setConsultaSeleccionada(c)}>Responder</Boton>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan="5" className="py-8 text-center text-niebla">No hay consultas que coincidan con los filtros seleccionados.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -390,32 +560,40 @@ function VistaConsultas({ user }) {
   );
 }
 function VistaUsuarios({ user }) {
+  const { mostrar } = useToast();
   const [usuarios, setUsuarios] = useState([]);
 
-  const cargarUsuarios = () => {
+  const cargarUsuarios = async () => {
     if (!user?.token) return;
-    fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
-      headers: { 'Authorization': `Bearer ${user.token}` }
-    })
-      .then(res => res.json())
-      .then(data => setUsuarios(data))
-      .catch(err => console.error("Error al traer usuarios", err));
+    setUsuarios(await pedirLista(`${API}/api/users`, user.token));
   };
+  
   useEffect(() => {
     cargarUsuarios();
   }, [user]);
+
   const handleEliminarUsuario = async (id) => {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
+      const res = await fetch(`${API}/api/users/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${user?.token}` }
       });
-      if (res.ok) cargarUsuarios();
-    } catch (err) {
-      console.error("Error al eliminar usuario", err);
+      if (res.ok) {
+        cargarUsuarios();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        mostrar({
+          tipo: 'error',
+          titulo: 'No se pudo eliminar',
+          mensaje: mensajeDeError(data, 'Intentá de nuevo.')
+        });
+      }
+    } catch {
+      mostrar({ tipo: 'error', titulo: 'Sin conexión', mensaje: 'No se pudo conectar con el servidor.' });
     }
   };
+  
   return (
     <>
       <h1 className="text-3xl font-display font-bold text-fexx mb-8">Gestión de Usuarios</h1>
@@ -451,6 +629,7 @@ function VistaUsuarios({ user }) {
     </>
   );
 }
+
 function TarjetaMetrica({ titulo, valor, color }) {
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-pizarra bg-grafito p-6 transition-transform hover:-translate-y-1 hover:shadow-lg hover:shadow-fexx/5 cursor-default">
@@ -459,3 +638,4 @@ function TarjetaMetrica({ titulo, valor, color }) {
     </div>
   );
 }
+
