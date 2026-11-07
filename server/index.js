@@ -8,7 +8,23 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { enviarConsulta, enviarRespuesta } = require('./mailer');
 const app = express();
-app.use(cors());
+app.use(cors({ exposedHeaders: ['X-Estado-Real'] }));
+
+// Gonzi: el navegador marca en rojo en la consola cualquier respuesta 4xx o 5xx.
+// Si el front manda el header X-Errores-Silenciosos, los errores viajan con 200 y el estado real va en X-Estado-Real.
+// Las rutas no cambian nada, siguen usando res.status(401) etc. - Rojo
+app.use((req, res, next) => {
+  if (req.get('X-Errores-Silenciosos') !== '1') return next();
+  const status = res.status.bind(res);
+  res.status = (codigo) => {
+    if (codigo >= 400) {
+      res.set('X-Estado-Real', String(codigo));
+      return status(200);
+    }
+    return status(codigo);
+  };
+  next();
+});
 app.use(express.json());
 
 
@@ -712,6 +728,14 @@ app.delete('/api/services/:id', requireAuth, requireAdmin, async (req, res) => {
     console.error('Error al dar de baja el servicio:', error.message);
     res.status(500).json({ mensaje: 'Error al dar de baja el servicio' });
   }
+});
+
+// rutas de la API que no existen y errores sin atrapar (por ejemplo un JSON mal armado) - Rojo
+app.use('/api', (req, res) => {
+  res.status(404).json({ mensaje: 'No encontramos eso.' });
+});
+app.use((err, req, res, next) => {
+  res.status(err.status && err.status < 500 ? err.status : 500).json({ mensaje: 'Algo salió mal. Probá de nuevo.' });
 });
 
 const PORT = process.env.PORT || 3000;

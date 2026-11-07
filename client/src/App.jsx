@@ -17,7 +17,7 @@ function VisitTracker() {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/visits`, {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/visits`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

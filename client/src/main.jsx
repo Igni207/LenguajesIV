@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './data/fetchSilencioso'
 import App from './App.jsx'
 import { ToastProvider } from './components/ui'
 

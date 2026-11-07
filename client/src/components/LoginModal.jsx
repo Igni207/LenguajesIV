@@ -66,7 +66,8 @@ export default function LoginModal({ isOpen, onClose, isStandalone = false }) {
       navigate(targetPath, { replace: true });
 
     } catch (err) {
-      setError(err.message || err.error || 'No se pudo conectar con el servidor.');
+      // Santy: el back manda { mensaje } y a veces { errores: { campo: texto } } - Rojo
+      setError((err.errores && Object.values(err.errores)[0]) || err.mensaje || 'No se pudo conectar con el servidor.');
     }
   };
 
